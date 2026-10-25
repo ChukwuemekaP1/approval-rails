@@ -18,6 +18,16 @@ export const ProposalStatusBadge: React.FC<Props> = ({ status, expiresAt }) => {
       text: 'Draft',
       icon: <Clock className="w-3.5 h-3.5" />,
     },
+    AWAITING_APPROVAL: {
+      bg: 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+      text: 'Awaiting Manager Approval',
+      icon: <Clock className="w-3.5 h-3.5" />,
+    },
+    SUBMITTED_FOR_APPROVAL: {
+      bg: 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+      text: 'Submitted for Approval',
+      icon: <Clock className="w-3.5 h-3.5" />,
+    },
     NEEDS_REVIEW: {
       bg: 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
       text: 'Needs Review',

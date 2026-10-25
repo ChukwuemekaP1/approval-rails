@@ -4,6 +4,8 @@ import { PolicyEvaluationResult } from '../policy/types';
 export type ProposalStatus =
   | 'DRAFT'
   | 'NEEDS_REVIEW'
+  | 'AWAITING_APPROVAL'
+  | 'SUBMITTED_FOR_APPROVAL'
   | 'BLOCKED'
   | 'SEALED'
   | 'AUTHORIZED'

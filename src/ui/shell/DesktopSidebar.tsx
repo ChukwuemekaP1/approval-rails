@@ -5,27 +5,29 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home,
-  ShoppingCart,
-  FileCheck2,
-  Clock,
+  Store,
+  ShoppingBag,
+  ClipboardCheck,
   ShieldCheck,
-  Layers,
+  Clock,
+  FileCheck2,
   ScrollText,
+  Layers,
   FileSearch,
   Settings,
-  FlaskConical,
 } from 'lucide-react';
 
 interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>;
-  phaseBadge?: string;
 }
 
 const PRIMARY_NAV: NavItem[] = [
   { name: 'Dashboard', href: '/app', icon: Home },
-  { name: 'Buy / Request', href: '/app/purchases/new', icon: ShoppingCart },
+  { name: 'Shop & Discovery', href: '/app/shop', icon: Store },
+  { name: 'Basket', href: '/app/cart', icon: ShoppingBag },
+  { name: 'Approvals', href: '/app/approvals', icon: ClipboardCheck },
   { name: 'Proposals', href: '/app/proposals', icon: ShieldCheck },
   { name: 'Activity', href: '/app/transactions', icon: Clock },
   { name: 'Policies', href: '/app/policies', icon: FileCheck2 },

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, ShoppingCart, Clock, FileCheck2, MoreHorizontal } from 'lucide-react';
+import { Home, Store, Clock, FileCheck2, MoreHorizontal } from 'lucide-react';
 
 interface MobileDestination {
   name: string;
@@ -13,7 +13,7 @@ interface MobileDestination {
 
 const DESTINATIONS: MobileDestination[] = [
   { name: 'Home', href: '/app', icon: Home },
-  { name: 'Buy', href: '/app/purchases/new', icon: ShoppingCart },
+  { name: 'Shop', href: '/app/shop', icon: Store },
   { name: 'Activity', href: '/app/transactions', icon: Clock },
   { name: 'Policies', href: '/app/policies', icon: FileCheck2 },
   { name: 'More', href: '/app/settings', icon: MoreHorizontal },

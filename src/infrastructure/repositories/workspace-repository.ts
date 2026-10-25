@@ -125,6 +125,39 @@ export class WorkspaceRepository {
       principal: r.principal as Principal,
     }));
   }
+
+  async updateMemberRole(
+    workspaceId: string,
+    principalId: string,
+    role: WorkspaceRole
+  ): Promise<WorkspaceMember | null> {
+    const db = getDb();
+    const rows = await db
+      .update(workspaceMembers)
+      .set({ role, updatedAt: new Date() })
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, workspaceId),
+          eq(workspaceMembers.principalId, principalId)
+        )
+      )
+      .returning();
+
+    return (rows[0] as WorkspaceMember) || null;
+  }
+
+  async removeMember(workspaceId: string, principalId: string): Promise<boolean> {
+    const db = getDb();
+    await db
+      .delete(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, workspaceId),
+          eq(workspaceMembers.principalId, principalId)
+        )
+      );
+    return true;
+  }
 }
 
 export const workspaceRepo = new WorkspaceRepository();

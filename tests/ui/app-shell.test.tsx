@@ -27,13 +27,13 @@ describe('Responsive Application Shell UI Components', () => {
   it('renders AppHeader with accessible brand link and status badge', () => {
     render(<AppHeader />);
     expect(screen.getByLabelText(/ApproveRail Home/i)).toBeInTheDocument();
-    expect(screen.getByText(/Phase 2: Auth Active/i)).toBeInTheDocument();
+    expect(screen.getByText(/Protected by Passkey/i)).toBeInTheDocument();
   });
 
   it('renders DesktopSidebar with primary workflow navigation links', () => {
     render(<DesktopSidebar />);
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Buy / Request')).toBeInTheDocument();
+    expect(screen.getByText('Shop & Discovery')).toBeInTheDocument();
     expect(screen.getByText('Activity')).toBeInTheDocument();
     expect(screen.getByText('Policies')).toBeInTheDocument();
     expect(screen.getByText('Ledger')).toBeInTheDocument();
@@ -45,7 +45,7 @@ describe('Responsive Application Shell UI Components', () => {
     expect(nav).toBeInTheDocument();
 
     expect(screen.getByLabelText('Home')).toBeInTheDocument();
-    expect(screen.getByLabelText('Buy')).toBeInTheDocument();
+    expect(screen.getByLabelText('Shop')).toBeInTheDocument();
     expect(screen.getByLabelText('Activity')).toBeInTheDocument();
     expect(screen.getByLabelText('Policies')).toBeInTheDocument();
     expect(screen.getByLabelText('More')).toBeInTheDocument();

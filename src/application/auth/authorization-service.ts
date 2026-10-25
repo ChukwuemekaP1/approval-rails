@@ -35,8 +35,15 @@ export class AuthorizationService {
       throw ApiError.forbidden('You are not a member of this workspace');
     }
 
-    if (requiredRole && requiredRole === 'ADMIN' && membership.role !== 'ADMIN') {
-      throw ApiError.forbidden('Administrator privileges required in this workspace');
+    if (requiredRole) {
+      const isOwnerOrAdmin = membership.role === 'OWNER' || membership.role === 'ADMIN';
+      const isManagerOrAbove = isOwnerOrAdmin || membership.role === 'MANAGER';
+      if ((requiredRole === 'ADMIN' || requiredRole === 'OWNER') && !isOwnerOrAdmin) {
+        throw ApiError.forbidden('Administrator privileges required in this workspace');
+      }
+      if (requiredRole === 'MANAGER' && !isManagerOrAbove) {
+        throw ApiError.forbidden('Manager or Approver privileges required in this workspace');
+      }
     }
 
     return {
@@ -61,8 +68,8 @@ export class AuthorizationService {
       return authContext;
     }
 
-    // Admins have oversight in their workspace
-    if (authContext.role === 'ADMIN') {
+    // Admins and owners have oversight in their workspace
+    if (authContext.role === 'ADMIN' || authContext.role === 'OWNER') {
       return authContext;
     }
 
