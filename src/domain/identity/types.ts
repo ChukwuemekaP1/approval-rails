@@ -1,6 +1,6 @@
 export type WorkspaceRole = 'ADMIN' | 'MEMBER';
 export type WorkspaceType = 'PERSONAL' | 'BUSINESS';
-export type AuthFlowType = 'REGISTRATION' | 'AUTHENTICATION';
+export type AuthFlowType = 'REGISTRATION' | 'AUTHENTICATION' | 'MANDATE_AUTHORIZATION';
 
 export interface Principal {
   id: string;

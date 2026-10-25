@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -25,12 +25,14 @@ import { SUPPORTED_CURRENCIES } from '@/domain/money/currency';
 
 export default function PurchaseRequestDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const requestId = params?.requestId as string;
   const { isAuthenticated, isLoading: authLoading, activeWorkspace } = useAuth();
 
   const [request, setRequest] = useState<PurchaseRequestDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [creatingCandidateId, setCreatingCandidateId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fetchRequest = useCallback(async () => {
@@ -78,6 +80,31 @@ export default function PurchaseRequestDetailPage() {
       setErrorMsg(err.message || 'Error retrying research');
     } finally {
       setIsRetrying(false);
+    }
+  };
+
+  const handleCreateProposal = async (candidateId: string) => {
+    if (!activeWorkspace?.id || !requestId) return;
+    setCreatingCandidateId(candidateId);
+    setErrorMsg(null);
+    try {
+      const res = await fetch(`/api/v1/workspaces/${activeWorkspace.id}/proposals`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourceRequestId: requestId,
+          items: [{ candidateId, quantity: 1 }],
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || 'Failed to create proposal');
+      }
+      const data = await res.json();
+      router.push(`/app/proposals/${data.proposal.id}`);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error creating proposal');
+      setCreatingCandidateId(null);
     }
   };
 
@@ -343,15 +370,32 @@ export default function PurchaseRequestDetailPage() {
                       )}
                     </div>
 
-                    <a
-                      href={c.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-brand-teal hover:underline font-medium"
-                    >
-                      <span>View Source</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <div className="flex items-center gap-3">
+                      <a
+                        href={c.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-medium"
+                      >
+                        <span>Source</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+
+                      {c.price && (
+                        <button
+                          onClick={() => handleCreateProposal(c.id)}
+                          disabled={creatingCandidateId !== null}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-teal hover:bg-teal-600 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
+                        >
+                          {creatingCandidateId === c.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                          )}
+                          <span>Create Proposal</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

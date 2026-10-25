@@ -159,12 +159,48 @@
 
 ## Roadmap & Next Gates
 
-### Phase 5: Proposal Review, Term Sealing & Passkey Authorization
-- Deliverables: Immutable basket review, canonical hashing, tamper-evident proposal sealing, WebAuthn cryptographic assertion bound to proposal terms hash.
-- Gate: Phase 4 discovery, research candidates, and source attribution verified.
+## Phase 5: Proposal Review, Term Sealing & Passkey Authorization (Completed)
+**Status**: Completed
+
+### Scope & Deliverables
+- [x] **Proposal & Mandate Domain**:
+  - `src/domain/proposal/types.ts`: `ProposalStatus`, `ProposalLineItem`, `ProposalTerms`, `Proposal`.
+  - `src/domain/proposal/canonicalize.ts`: RFC 8785 deterministic JCS canonicalization with key sorting, BigInt minor unit base-10 string serialization, and SHA-256 terms digest (`computeTermsHash`).
+  - `src/domain/proposal/state-machine.ts`: Legal state transitions (`canTransition`, `assertValidTransition`, `isModifiableStatus`, `isSealedStatus`, `isTerminalStatus`).
+  - `src/domain/proposal/calculator.ts`: Server-side price calculation enforcing single merchant, single currency, integer minor units arithmetic, and confirmed pricing snapshots.
+- [x] **PostgreSQL Schema & Migration**:
+  - Added `proposals` and `proposal_line_items` tables with cascade deletes, timestamps, and indexes.
+  - Forward-only migration `drizzle/0003_third_mimic.sql` applied to live Neon database.
+- [x] **Application Use Cases & APIs**:
+  - `ProposalUseCases`: `createProposal`, `getProposal`, `listWorkspaceProposals`, `reviseBasket`, `sealProposal`, `unsealProposal`, `generateAuthorizationOptions`, `authorizeProposal`.
+  - API routes:
+    - `GET/POST /api/v1/workspaces/[workspaceId]/proposals`
+    - `GET /api/v1/workspaces/[workspaceId]/proposals/[proposalId]`
+    - `PUT /api/v1/workspaces/[workspaceId]/proposals/[proposalId]/basket`
+    - `POST /api/v1/workspaces/[workspaceId]/proposals/[proposalId]/seal`
+    - `POST /api/v1/workspaces/[workspaceId]/proposals/[proposalId]/unseal`
+    - `POST /api/v1/workspaces/[workspaceId]/proposals/[proposalId]/auth-options`
+    - `POST /api/v1/workspaces/[workspaceId]/proposals/[proposalId]/authorize`
+- [x] **UI Review & Authorization Surface**:
+  - `/app/proposals/[proposalId]`: Status badges, policy compliance card, editable basket with quantity adjusters, canonical RFC 8785 SHA-256 digest viewer, seal/unseal controls, and WebAuthn passkey assertion trigger via `@simplewebauthn/browser`.
+  - Added "Create Proposal" trigger on candidate cards in `/app/purchases/[requestId]`.
+- [x] **Testing & Verification**:
+  - Unit tests: `proposal-canonicalize.test.ts` (3 tests), `proposal-state-machine.test.ts` (4 tests), `proposal-calculator.test.ts` (4 tests).
+  - Integration tests: `proposal-lifecycle.test.ts` (2 tests) against live Neon PostgreSQL database.
+  - UI tests: `proposal-page.test.tsx` (2 tests).
+  - Full suite: 24 test files, 87 tests passed.
+  - Playwright E2E: 10 tests passed on desktop and mobile viewports.
+  - Typecheck: 0 errors.
+  - Lint: 0 errors.
+  - Production build: SUCCESS.
+
+---
+
+## Roadmap & Next Gates
 
 ### Phase 6: PayPal Settlement & Idempotent Capture
 - Deliverables: PayPal Orders v2 integration, webhook verification, idempotent capture transitions, state reconciliation.
+- Gate: Phase 5 sealed mandates and WebAuthn authorizations verified.
 
 ### Phase 7: Operational Ledger, Evidence Trail & Verification
 - Deliverables: Append-only ledger events with hash chaining, offline bundle export, independent verification viewer `/app/verify`, AG Grid operational table.
