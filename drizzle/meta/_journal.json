@@ -15,6 +15,13 @@
       "when": 1792909334202,
       "tag": "0001_useful_mariko_yashida",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792910577232,
+      "tag": "0002_tired_madrox",
+      "breakpoints": true
     }
   ]
 }

@@ -48,8 +48,12 @@ export class ApiError extends Error {
     return new ApiError(422, 'UNPROCESSABLE_ENTITY', message, details);
   }
 
-  static serviceUnavailable(message: string = 'Service temporarily unavailable') {
-    return new ApiError(503, 'SERVICE_UNAVAILABLE', message);
+  static serviceUnavailable(message: string = 'Service temporarily unavailable', details?: Record<string, string[] | string>) {
+    return new ApiError(503, 'SERVICE_UNAVAILABLE', message, details);
+  }
+
+  static badGateway(message: string = 'Bad gateway', details?: Record<string, string[] | string>) {
+    return new ApiError(502, 'BAD_GATEWAY', message, details);
   }
 
   static internal(message: string = 'Internal server error') {

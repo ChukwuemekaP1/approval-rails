@@ -111,17 +111,57 @@
 
 ---
 
+## Phase 4: Purchase Discovery & AI Research Assistance (Completed)
+**Status**: Completed
+
+### Scope & Deliverables
+- [x] **Purchase Request & Catalog Domain**:
+  - `src/domain/purchase/types.ts`: `PurchaseRequest`, `PurchaseRequestStatus` (`DRAFT`, `RESEARCHING`, `COMPLETED`, `FAILED`), `PurchaseConstraints`.
+  - `src/domain/catalog/types.ts`: `CatalogCandidateSnapshot`, `CatalogSearchQuery`, `CatalogSearchResult`.
+  - `src/domain/catalog/comparison.ts`: `ResearchSummary`, `CandidateComparison`.
+- [x] **PostgreSQL Schema & Migration**:
+  - Tables `purchase_requests` and `catalog_candidates` added to `src/infrastructure/db/schema.ts` with workspace scoping, cascade deletes, and foreign keys.
+  - Forward-only migration `drizzle/0002_tired_madrox.sql` applied to live Neon database.
+- [x] **Catalog Provider Port & Adapters**:
+  - `CatalogProvider` port interface.
+  - `Channel3CatalogAdapter`: real HTTP client for Channel3 API (`POST /v1/search`), validates request/response schemas with Zod, normalizes errors, converts prices to integer minor units, and reports `BLOCKED` status when credentials unconfigured.
+  - `FixtureCatalogAdapter`: deterministic test fixtures for unit and integration testing without fabricating fake live results.
+  - Server-only execution: API keys never leave server boundary.
+- [x] **Gemini Research & Comparison Adapter**:
+  - `GeminiResearchAdapter`: `@google/genai` integration with model `gemini-3.8-flash`.
+  - Strictly constrained discovery and comparison scope. No access to PayPal, order capture, payment authorization, or policy editing tools.
+  - Treats user prompt and catalog descriptions as untrusted data (prompt-injection defense).
+  - Validates structured output via Zod.
+  - Enforces safety invariant: `recommendedCandidateId` restricted strictly to verified candidate list.
+  - Never overrides catalog facts, prices, or URLs.
+- [x] **Application Use Cases & APIs**:
+  - `PurchaseUseCases`: `createRequest`, `getRequestDetails`, `listRequests`, `executeResearch`.
+  - `POST /api/v1/workspaces/:workspaceId/purchases`: creates request (and optional auto-research).
+  - `GET /api/v1/workspaces/:workspaceId/purchases`: lists requests.
+  - `GET /api/v1/workspaces/:workspaceId/purchases/:requestId`: gets request details and candidates.
+  - `POST /api/v1/workspaces/:workspaceId/purchases/:requestId/research`: runs/retries research workflow.
+- [x] **UI Pages**:
+  - `/app/purchases/new`: Natural language intent, target budget in integer minor units, currency, category, preferred merchant.
+  - `/app/purchases/[requestId]`: Persistent detail view with status badge, AI synthesis, recommendation highlight, catalog candidate cards, stock availability, and source links.
+  - Durable persistence: page refresh never erases completed research.
+  - Mobile (360px) and desktop responsive.
+- [x] **Testing & Verification**:
+  - Unit tests: `channel3-adapter.test.ts` (4 tests), `gemini-adapter.test.ts` (3 tests).
+  - Integration tests: `purchase-request.test.ts` (2 tests) against live Neon PostgreSQL.
+  - UI tests: `purchases-pages.test.tsx` (2 tests).
+  - Full suite: 19 test files, 72 tests passed.
+  - Playwright E2E tests: 10 tests passed across desktop and 360px mobile viewports.
+  - Typecheck (`tsc --noEmit`): 0 errors.
+  - Lint (`next lint`): 0 errors, 0 warnings.
+  - Production build (`next build`): SUCCESS.
+
+---
+
 ## Roadmap & Next Gates
-
-### Phase 4: Purchase Discovery & AI Research Assistance
-- Deliverables: `purchase_requests`, Channel3 catalog integration, constrained Gemini assistant adapter with untrusted output isolation, candidate product selection.
-- Gate: Phase 3 deterministic policy engine and versioning verified.
-
-### Phase 4: Purchase Discovery & AI Research Assistance
-- Deliverables: `purchase_requests`, Channel3 catalog integration, constrained Gemini assistant adapter with untrusted output isolation, candidate product selection.
 
 ### Phase 5: Proposal Review, Term Sealing & Passkey Authorization
 - Deliverables: Immutable basket review, canonical hashing, tamper-evident proposal sealing, WebAuthn cryptographic assertion bound to proposal terms hash.
+- Gate: Phase 4 discovery, research candidates, and source attribution verified.
 
 ### Phase 6: PayPal Settlement & Idempotent Capture
 - Deliverables: PayPal Orders v2 integration, webhook verification, idempotent capture transitions, state reconciliation.

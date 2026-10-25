@@ -14,9 +14,8 @@ test.describe('ApproveRail Core Navigation', () => {
 
   test('navigates to route placeholders and verifies honest placeholder messaging', async ({ page }) => {
     await page.goto('/app/purchases/new');
-    await expect(page.getByRole('heading', { name: /Create Purchase Request/i })).toBeVisible();
-    await expect(page.getByText(/Honest Greenfield Placeholder/i)).toBeVisible();
-    await expect(page.getByText(/Phase 4: Discovery & Research/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Authentication Required/i })).toBeVisible();
+    await expect(page.locator('#main-content').getByRole('link', { name: /Sign In with Passkey/i })).toBeVisible();
 
     await page.goto('/app/policies');
     await expect(page.getByRole('heading', { name: /Authentication Required/i })).toBeVisible();
@@ -24,6 +23,7 @@ test.describe('ApproveRail Core Navigation', () => {
 
     await page.goto('/app/transactions');
     await expect(page.getByRole('heading', { name: /Transaction Activity & History/i })).toBeVisible();
+    await expect(page.getByText(/Honest Greenfield Placeholder/i)).toBeVisible();
 
     await page.goto('/auth');
     await expect(page.getByRole('heading', { name: /Approve\s*Rail/i })).toBeVisible();

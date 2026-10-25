@@ -12,6 +12,10 @@ const envSchema = z.object({
   WEBAUTHN_RP_ID: z.string().default('localhost'),
   WEBAUTHN_RP_NAME: z.string().default('ApproveRail'),
   WEBAUTHN_ORIGIN: z.string().default('http://localhost:3000'),
+  CHANNEL3_API_KEY: z.string().optional(),
+  CHANNEL3_BASE_URL: z.string().url().default('https://api.trychannel3.com'),
+  CATALOG_PROVIDER: z.enum(['channel3', 'fixture', 'auto']).default('auto'),
+  GEMINI_API_KEY: z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof envSchema>;

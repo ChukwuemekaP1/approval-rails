@@ -25,7 +25,7 @@ test.describe('Mobile Viewport Smoke & Responsive Layout', () => {
     // Click on 'Buy' in bottom navigation
     await mobileNav.getByRole('link', { name: 'Buy', exact: true }).click();
     await expect(page).toHaveURL(/\/app\/purchases\/new/);
-    await expect(page.getByRole('heading', { name: /Create Purchase Request/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Authentication Required|New Purchase Request/i })).toBeVisible();
 
     // Check again for no overflow on route placeholder
     const placeholderOverflow = await page.evaluate(() => {
