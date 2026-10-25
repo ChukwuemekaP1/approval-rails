@@ -67,6 +67,13 @@ export function toProblemDetailsResponse(
 ): NextResponse<ProblemDetails> {
   const { instance, correlationId } = options;
 
+  if (error && typeof error === 'object' && ('issues' in error || (error as any).name === 'ZodError')) {
+    const issues = (error as any).issues || [];
+    const firstMsg = issues[0]?.message || 'Validation error';
+    const field = issues[0]?.path?.join('.') || 'body';
+    error = ApiError.badRequest(`${field}: ${firstMsg}`);
+  }
+
   if (error instanceof ApiError) {
     const body: ProblemDetails = {
       type: `https://approve-rail.dev/errors/${error.code.toLowerCase().replace(/_/g, '-')}`,

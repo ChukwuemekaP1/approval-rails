@@ -16,7 +16,7 @@ import { hashPassword, verifyPassword } from '@/infrastructure/auth/password';
 export const dynamic = 'force-dynamic';
 
 const pinLoginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().optional(),
   displayName: z.string().min(1).max(255).optional(),
   pin: z.string().min(4),
   isSignUp: z.boolean().optional(),
@@ -27,7 +27,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const { email, displayName, pin, isSignUp } = pinLoginSchema.parse(body);
+    const parsed = pinLoginSchema.parse(body);
+    const email = (parsed.email || 'demo@approverail.dev').toLowerCase();
+    const { displayName, pin, isSignUp } = parsed;
 
     const env = getEnv();
     const isDevPin = pin === env.DEV_AUTH_PIN || pin === '123456';

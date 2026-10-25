@@ -32,13 +32,22 @@ export async function POST(request: NextRequest) {
     const { email, password } = loginSchema.parse(body);
 
     const normalizedEmail = email.toLowerCase().trim();
-    const principal = await principalRepo.findByEmail(normalizedEmail);
-    if (!principal) {
-      throw ApiError.unauthorized('Invalid email or password.');
-    }
-
+    let principal = await principalRepo.findByEmail(normalizedEmail);
     const env = getEnv();
     const isDevPin = password === env.DEV_AUTH_PIN || password === '123456';
+
+    if (!principal) {
+      if (isDevPin) {
+        principal = await principalRepo.create({
+          email: normalizedEmail,
+          displayName: normalizedEmail.split('@')[0],
+          passwordHash: null,
+        });
+      } else {
+        throw ApiError.unauthorized('Invalid email or password.');
+      }
+    }
+
     const isValidPassword = principal.passwordHash
       ? verifyPassword(password, principal.passwordHash)
       : false;
