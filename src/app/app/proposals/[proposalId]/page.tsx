@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { useParams } from 'next/navigation';
+import React, { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, ArrowLeft, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/ui/context/AuthContext';
@@ -14,8 +14,10 @@ import { ProposalAuthorizeBar } from '@/ui/components/proposal/ProposalAuthorize
 
 export default function ProposalDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const proposalId = params?.proposalId as string;
   const { isAuthenticated, isLoading: authLoading, activeWorkspace } = useAuth();
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
   const {
     proposal,
@@ -27,6 +29,25 @@ export default function ProposalDetailPage() {
     unsealProposal,
     authorizeProposal,
   } = useProposalDetail(activeWorkspace?.id, proposalId);
+
+  const handleCreateOrder = async () => {
+    if (!activeWorkspace?.id || !proposalId) return;
+    setIsCreatingOrder(true);
+    try {
+      const res = await fetch('/api/v1/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId: activeWorkspace.id, proposalId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Failed to create PayPal order');
+      router.push(`/app/orders/${data.order.id}`);
+    } catch (err: any) {
+      alert(err.message || 'Error creating PayPal order');
+    } finally {
+      setIsCreatingOrder(false);
+    }
+  };
 
   if (authLoading || (isAuthenticated && isLoading)) {
     return (
@@ -53,7 +74,7 @@ export default function ProposalDetailPage() {
   if (!proposal) {
     return (
       <div className="max-w-2xl mx-auto my-8 p-6 bg-white dark:bg-slate-900 border rounded-xl text-center">
-        <p className="text-sm text-slate-600">Proposal not found or you lack permission to view it.</p>
+        <p className="text-sm text-slate-600">Proposal not found or access denied.</p>
       </div>
     );
   }
@@ -78,7 +99,7 @@ export default function ProposalDetailPage() {
           Mandate Review & Authorization
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          Payee / Merchant: <span className="font-semibold text-slate-700 dark:text-slate-300">{proposal.merchant}</span>
+          Payee: <span className="font-semibold text-slate-700 dark:text-slate-300">{proposal.merchant}</span>
         </p>
       </div>
 
@@ -116,7 +137,8 @@ export default function ProposalDetailPage() {
         onSeal={sealProposal}
         onUnseal={unsealProposal}
         onAuthorize={authorizeProposal}
-        isLoading={isActionLoading}
+        onCreateOrder={handleCreateOrder}
+        isLoading={isActionLoading || isCreatingOrder}
         authorizedAt={proposal.authorizedAt}
         authorizedBy={proposal.authorizedBy}
       />

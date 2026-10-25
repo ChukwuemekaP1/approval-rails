@@ -16,6 +16,11 @@ const envSchema = z.object({
   CHANNEL3_BASE_URL: z.string().url().default('https://api.trychannel3.com'),
   CATALOG_PROVIDER: z.enum(['channel3', 'fixture', 'auto']).default('auto'),
   GEMINI_API_KEY: z.string().optional(),
+  PAYPAL_CLIENT_ID: z.string().optional(),
+  PAYPAL_CLIENT_SECRET: z.string().optional(),
+  PAYPAL_MODE: z.enum(['sandbox', 'production']).default('sandbox'),
+  PAYPAL_WEBHOOK_ID: z.string().optional(),
+  PAYPAL_API_BASE_URL: z.string().url().optional(),
 });
 
 export type ServerEnv = z.infer<typeof envSchema>;

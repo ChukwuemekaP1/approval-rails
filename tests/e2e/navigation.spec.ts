@@ -25,7 +25,10 @@ test.describe('ApproveRail Core Navigation', () => {
     await expect(page.getByRole('heading', { name: /Authentication Required/i })).toBeVisible();
 
     await page.goto('/app/transactions');
-    await expect(page.getByRole('heading', { name: /Transaction Activity & History/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Authentication Required/i })).toBeVisible();
+
+    await page.goto('/app/ledger');
+    await expect(page.getByRole('heading', { name: /Operational Ledger/i })).toBeVisible();
     await expect(page.getByText(/Honest Greenfield Placeholder/i)).toBeVisible();
 
     await page.goto('/auth');

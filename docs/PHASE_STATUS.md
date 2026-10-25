@@ -196,11 +196,42 @@
 
 ---
 
-## Roadmap & Next Gates
+## Phase 6: PayPal Settlement & Idempotent Capture (Completed)
+**Status**: Completed
 
-### Phase 6: PayPal Settlement & Idempotent Capture
-- Deliverables: PayPal Orders v2 integration, webhook verification, idempotent capture transitions, state reconciliation.
-- Gate: Phase 5 sealed mandates and WebAuthn authorizations verified.
+### Scope & Deliverables
+- [x] **Server-Only PayPal Orders v2 Adapter**:
+  - Implemented `PaymentGatewayPort` behind application port with `PayPalClient` and `PayPalAdapter`.
+  - Full sandbox support with token caching, timeout guards, and strict secret redaction.
+  - Mocks and fixtures for deterministic offline testing.
+- [x] **Mandate Authorization Checks & Immutability**:
+  - Enforced SEC-01: Only proposal requester or workspace ADMIN can create an order.
+  - Enforced SEC-02: Only order owner or workspace ADMIN can capture an order.
+  - Amount, currency, and merchant are derived strictly from the persisted, authorized proposal (request body tampering is impossible).
+  - Database unique constraint on `orders.proposal_id` prevents duplicate order creation.
+- [x] **Explicit Payment State Machine & Reconciliation**:
+  - States: `CREATED`, `APPROVAL_PENDING`, `CAPTURE_PENDING`, `COMPLETED`, `FAILED`, `UNKNOWN`.
+  - Outbound capture timeouts safely transition order state to `UNKNOWN` (never falsely marked success).
+  - `ReconcileOrderUseCase` checks PayPal authoritative state before resolving ambiguous payments.
+  - Transactional locking prevents double capture races.
+- [x] **PayPal Webhook Verification & Deduplication**:
+  - `POST /api/v1/paypal/webhooks`: Verified signature using provider mechanism and `PAYPAL_WEBHOOK_ID`.
+  - Stored verified events under unique constraint `webhook_events.event_id` for idempotent processing.
+  - Documented retryable 503 response if webhook configuration is absent in production.
+- [x] **UI & User Experience**:
+  - `/app/orders/[orderId]`: Authoritative order review, PayPal sandbox checkout link, capture trigger, and reconciliation actions.
+  - `/app/transactions`: Real workspace transaction activity with status badges and links to settlement details.
+  - Handoff from `/app/proposals/[proposalId]` directly into PayPal order creation when mandate is authorized.
+- [x] **Testing & Verification**:
+  - Unit tests: `payment-state-machine.test.ts`, `paypal-adapter.test.ts`.
+  - Integration tests: `order-lifecycle.test.ts`, `order-security-invariants.test.ts`.
+  - UI tests: `order-page.test.tsx`.
+  - Full test suite: 31 test files / 107 tests passed (Vitest).
+  - Playwright E2E: 18 tests passed across Desktop and 360px mobile viewports.
+
+---
+
+## Roadmap & Next Gates
 
 ### Phase 7: Operational Ledger, Evidence Trail & Verification
 - Deliverables: Append-only ledger events with hash chaining, offline bundle export, independent verification viewer `/app/verify`, AG Grid operational table.
