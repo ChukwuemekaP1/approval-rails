@@ -21,6 +21,7 @@ const envSchema = z.object({
   PAYPAL_MODE: z.enum(['sandbox', 'production']).default('sandbox'),
   PAYPAL_WEBHOOK_ID: z.string().optional(),
   PAYPAL_API_BASE_URL: z.string().url().optional(),
+  DEV_AUTH_PIN: z.string().default('123456'),
 });
 
 export type ServerEnv = z.infer<typeof envSchema>;

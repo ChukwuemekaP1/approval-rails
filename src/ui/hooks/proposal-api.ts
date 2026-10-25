@@ -82,3 +82,24 @@ export async function authorizeProposalApi(workspaceId: string, proposalId: stri
   const data = await authRes.json();
   return data.proposal;
 }
+
+export async function authorizeProposalWithPinApi(
+  workspaceId: string,
+  proposalId: string,
+  pin: string = '123456'
+): Promise<ProposalDTO> {
+  const res = await fetch(
+    `/api/v1/workspaces/${workspaceId}/proposals/${proposalId}/authorize-pin`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'PIN authorization failed');
+  }
+  const data = await res.json();
+  return data.proposal;
+}

@@ -28,6 +28,7 @@ export default function ProposalDetailPage() {
     sealProposal,
     unsealProposal,
     authorizeProposal,
+    authorizeProposalWithPin,
   } = useProposalDetail(activeWorkspace?.id, proposalId);
 
   const handleCreateOrder = async () => {
@@ -63,9 +64,9 @@ export default function ProposalDetailPage() {
       <div className="max-w-md mx-auto my-12 p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-center">
         <Lock className="w-10 h-10 text-brand-teal mx-auto mb-3" />
         <h2 className="text-lg font-bold text-slate-900 dark:text-white">Authentication Required</h2>
-        <p className="text-xs text-slate-500 mt-1">Sign in with your passkey to review proposals.</p>
+        <p className="text-xs text-slate-500 mt-1">Sign in to review proposals.</p>
         <Link href="/auth" className="mt-5 inline-block w-full py-2 px-4 bg-brand-teal text-white font-medium text-xs rounded-lg">
-          Sign In with Passkey
+          Sign In
         </Link>
       </div>
     );
@@ -74,7 +75,7 @@ export default function ProposalDetailPage() {
   if (!proposal) {
     return (
       <div className="max-w-2xl mx-auto my-8 p-6 bg-white dark:bg-slate-900 border rounded-xl text-center">
-        <p className="text-sm text-slate-600">Proposal not found or access denied.</p>
+        <p className="text-sm text-slate-600">Proposal not found.</p>
       </div>
     );
   }
@@ -137,6 +138,7 @@ export default function ProposalDetailPage() {
         onSeal={sealProposal}
         onUnseal={unsealProposal}
         onAuthorize={authorizeProposal}
+        onAuthorizePin={authorizeProposalWithPin}
         onCreateOrder={handleCreateOrder}
         isLoading={isActionLoading || isCreatingOrder}
         authorizedAt={proposal.authorizedAt}

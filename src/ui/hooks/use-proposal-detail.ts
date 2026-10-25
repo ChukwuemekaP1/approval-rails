@@ -8,6 +8,7 @@ import {
   sealProposalApi,
   unsealProposalApi,
   authorizeProposalApi,
+  authorizeProposalWithPinApi,
 } from './proposal-api';
 
 export function useProposalDetail(workspaceId?: string, proposalId?: string) {
@@ -94,6 +95,20 @@ export function useProposalDetail(workspaceId?: string, proposalId?: string) {
     }
   };
 
+  const authorizeProposalWithPin = async (pin: string = '123456') => {
+    if (!workspaceId || !proposalId) return;
+    setIsActionLoading(true);
+    setErrorMsg(null);
+    try {
+      const data = await authorizeProposalWithPinApi(workspaceId, proposalId, pin);
+      setProposal(data);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'PIN authorization failed');
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
   return {
     proposal,
     isLoading,
@@ -103,5 +118,6 @@ export function useProposalDetail(workspaceId?: string, proposalId?: string) {
     sealProposal,
     unsealProposal,
     authorizeProposal,
+    authorizeProposalWithPin,
   };
 }
