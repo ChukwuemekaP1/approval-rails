@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { ClientProviders } from '@/ui/providers/ClientProviders';
 
 export const metadata: Metadata = {
   title: 'ApproveRail | AI-Assisted Purchasing with Human Consent',
@@ -27,7 +28,7 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        {children}
+        <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
   );

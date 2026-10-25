@@ -10,11 +10,24 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/app',
 }));
 
+vi.mock('@/ui/context/AuthContext', () => ({
+  useAuth: () => ({
+    isAuthenticated: false,
+    isLoading: false,
+    principal: null,
+    activeWorkspace: { id: 'ws-default', name: 'Default Workspace', type: 'PERSONAL', role: 'ADMIN' },
+    memberships: [],
+    selectWorkspace: vi.fn(),
+    logout: vi.fn(),
+    refreshSession: vi.fn(),
+  }),
+}));
+
 describe('Responsive Application Shell UI Components', () => {
   it('renders AppHeader with accessible brand link and status badge', () => {
     render(<AppHeader />);
     expect(screen.getByLabelText(/ApproveRail Home/i)).toBeInTheDocument();
-    expect(screen.getByText(/Phase 1: Shell Active/i)).toBeInTheDocument();
+    expect(screen.getByText(/Phase 2: Auth Active/i)).toBeInTheDocument();
   });
 
   it('renders DesktopSidebar with primary workflow navigation links', () => {

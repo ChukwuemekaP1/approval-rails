@@ -8,6 +8,10 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1).default('postgresql://postgres:postgres@localhost:5432/approve_rail'),
   DATABASE_POOL_MIN: z.coerce.number().int().nonnegative().default(1),
   DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
+  SESSION_SECRET: z.string().min(32).default('c68e1fae792e4be0bb59e66ffb28795c643b469cb98f483c9d747d5267cb72c8'),
+  WEBAUTHN_RP_ID: z.string().default('localhost'),
+  WEBAUTHN_RP_NAME: z.string().default('ApproveRail'),
+  WEBAUTHN_ORIGIN: z.string().default('http://localhost:3000'),
 });
 
 export type ServerEnv = z.infer<typeof envSchema>;
@@ -26,7 +30,7 @@ export function validateEnv(rawEnv: Record<string, string | undefined> = process
 }
 
 export function getEnv(): ServerEnv {
-  if (!cachedEnv) {
+  if (!cachedEnv || process.env.NODE_ENV === 'test') {
     cachedEnv = validateEnv();
   }
   return cachedEnv;

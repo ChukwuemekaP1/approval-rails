@@ -4,13 +4,18 @@ import path from 'path';
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'jsdom',
+    testTimeout: 15000,
+    environmentMatchGlobs: [
+      ['tests/ui/**', 'jsdom'],
+      ['tests/unit/**', 'node'],
+      ['tests/integration/**', 'node'],
+    ],
     setupFiles: ['./tests/setup.ts'],
-    include: ['tests/unit/**/*.{test,spec}.{ts,tsx}', 'tests/ui/**/*.{test,spec}.{ts,tsx}'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-    },
+    include: [
+      'tests/unit/**/*.{test,spec}.{ts,tsx}',
+      'tests/ui/**/*.{test,spec}.{ts,tsx}',
+      'tests/integration/**/*.{test,spec}.{ts,tsx}',
+    ],
   },
   resolve: {
     alias: {

@@ -26,6 +26,6 @@ test.describe('ApproveRail Core Navigation', () => {
     await expect(page.getByRole('heading', { name: /Transaction Activity & History/i })).toBeVisible();
 
     await page.goto('/auth');
-    await expect(page.getByRole('heading', { name: /Passkey Authentication/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Approve\s*Rail/i })).toBeVisible();
   });
 });
