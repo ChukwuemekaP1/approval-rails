@@ -62,9 +62,60 @@
 
 ## Roadmap & Next Gates
 
-### Phase 3: Policy Versioning & Deterministic Evaluation
-- Deliverables: Policy schema (`policies`), immutable versioning, integer minor unit budgets, rule parser and deterministic evaluation engine in `src/domain/policy`.
-- Gate: Phase 2 tenancy, authentication, and authorization verified.
+## Phase 3: Policy Versioning & Deterministic Evaluation (Completed)
+**Status**: Completed
+
+### Scope & Deliverables
+- [x] **Zero Floating-Point Money Domain (`src/domain/money/currency.ts`)**:
+  - `CurrencyCode`, `SUPPORTED_CURRENCIES` (USD, EUR, GBP, CAD, AUD, JPY).
+  - Minor unit precision (`bigint`) for all financial amounts.
+  - Pure functions: `parseDecimalToMinorUnits`, `formatMinorUnitsToDecimal`, `compareMoney`, `addMoney`, `subtractMoney`.
+  - Rejection of floating point and strict handling of 0-decimal currencies (JPY).
+- [x] **Deterministic Policy Engine (`src/domain/policy/`)**:
+  - Pure domain types (`Policy`, `PolicyRules`, `PolicyEvaluationContext`, `PolicyEvaluationResult`).
+  - Stable reason codes (`POLICY_OK`, `CURRENCY_MISMATCH`, `EXCEEDS_TRANSACTION_CAP`, `EXCEEDS_MONTHLY_BUDGET`, `REQUIRES_ADMIN_AUTHORIZATION`, `MERCHANT_BLOCKED`, `CATEGORY_DISALLOWED`).
+  - Pure evaluator (`evaluatePolicy`) free of framework dependencies, hidden clock reads, or network I/O.
+  - Canonicalization & Hashing (`canonicalizePolicyRules`, `computePolicyContentHash`): key-sorted JSON and SHA-256 digest.
+- [x] **PostgreSQL Database Schema & Migration**:
+  - `policies` table in `src/infrastructure/db/schema.ts` with composite unique constraint `(workspace_id, version)` and foreign keys to `workspaces` and `principals`.
+  - Forward-only Drizzle migration `drizzle/0001_useful_mariko_yashida.sql` applied to live Neon database.
+- [x] **Policy Repository & Use Cases**:
+  - `policyRepo.getActivePolicy`, `listVersions`, `getVersion`, `createAndActivate`, `ensureDefaultPolicy`.
+  - Atomic transaction: deactivates previous active policy and persists version $N+1$.
+  - Documented default policy seeded upon initial query for new workspaces.
+  - `PolicyUseCases`:
+    - `getActivePolicy`: retrieves active policy.
+    - `listVersions`: retrieves full immutable version history.
+    - `createAndActivateVersion`: strictly gated by workspace `ADMIN` authorization.
+    - `evaluateProposal`: resolves authoritative policy directly from database; client-supplied policies are prohibited.
+- [x] **API Endpoints**:
+  - `GET /api/v1/workspaces/:workspaceId/policy`
+  - `POST /api/v1/workspaces/:workspaceId/policy`
+  - `GET /api/v1/workspaces/:workspaceId/policy/versions`
+- [x] **UI & App Shell Integration (`/app/policies`)**:
+  - Active policy overview with real-time rule cards and canonical SHA-256 content hash inspection.
+  - Role-aware editor (`ADMIN` authoring vs `MEMBER` read-only indicator).
+  - Live client-side validation (per-transaction cap $\le$ monthly budget cap, positive numbers).
+  - Dirty state tracking ("Unsaved Changes (Draft)").
+  - Immutable version history timeline with rule inspection modal.
+  - Invariant callout: sealed proposals retain their evaluated policy version and hash.
+- [x] **Testing & Verification**:
+  - Unit tests: `tests/unit/money.test.ts` (13 tests), `tests/unit/policy-canonicalize.test.ts` (3 tests), `tests/unit/policy-evaluator.test.ts` (7 tests).
+  - Integration tests: `tests/integration/policy-versioning.test.ts` (4 tests) against live Neon PostgreSQL.
+  - UI tests: `tests/ui/policies-page.test.tsx` (3 tests).
+  - Playwright E2E tests: 10 tests passed across desktop and mobile 360px viewports.
+  - Full suite: 14 test files, 58 tests passed.
+  - Typecheck (`tsc --noEmit`): 0 errors.
+  - Lint (`next lint`): 0 errors, 0 warnings.
+  - Production build (`next build`): SUCCESS.
+
+---
+
+## Roadmap & Next Gates
+
+### Phase 4: Purchase Discovery & AI Research Assistance
+- Deliverables: `purchase_requests`, Channel3 catalog integration, constrained Gemini assistant adapter with untrusted output isolation, candidate product selection.
+- Gate: Phase 3 deterministic policy engine and versioning verified.
 
 ### Phase 4: Purchase Discovery & AI Research Assistance
 - Deliverables: `purchase_requests`, Channel3 catalog integration, constrained Gemini assistant adapter with untrusted output isolation, candidate product selection.
