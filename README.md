@@ -83,7 +83,22 @@ pnpm build
 
 ---
 
+## Deployment on Render
+
+ApproveRail includes native support for **Render** via its Blueprint specification (`render.yaml`) and multi-stage `Dockerfile`.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+- **One-Click Blueprint**: Automatically provisions the Next.js web application and managed PostgreSQL database.
+- **Automated Migrations**: Drizzle ORM migrations run before release via `preDeployCommand`.
+- **Health Probes**: Automated rolling zero-downtime updates via `/api/v1/health`.
+- See the complete [Render Deployment Guide](docs/render-deployment.md).
+
+---
+
 ## Documentation Links
+
+- [Render Deployment Guide](docs/render-deployment.md)
 
 - [Architecture Guide](docs/ARCHITECTURE.md)
 - [Security Invariants](docs/SECURITY_INVARIANTS.md)

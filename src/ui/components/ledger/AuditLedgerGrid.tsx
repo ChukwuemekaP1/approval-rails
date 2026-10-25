@@ -2,12 +2,13 @@
 
 import React, { useMemo, useState, useRef, useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { ColDef, ModuleRegistry, AllCommunityModule, GridReadyEvent } from 'ag-grid-community';
+import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import { LedgerEntry } from '@/domain/ledger/types';
-import { Search, Download, Loader2, AlertCircle } from 'lucide-react';
-import { formatMinorUnitsToDecimal } from '@/domain/money/currency';
+import { Search, Download, LayoutList, Table } from 'lucide-react';
+import { getAuditLedgerColumns } from './AuditLedgerColumns';
+import { MobileAuditStream } from './MobileAuditStream';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -20,6 +21,7 @@ interface Props {
 export function AuditLedgerGrid({ entries, isLoading, error }: Props) {
   const gridRef = useRef<AgGridReact>(null);
   const [quickFilterText, setQuickFilterText] = useState('');
+  const [mobileMode, setMobileMode] = useState<'cards' | 'grid'>('cards');
 
   const onExportCsv = useCallback(() => {
     gridRef.current?.api.exportDataAsCsv({
@@ -27,85 +29,7 @@ export function AuditLedgerGrid({ entries, isLoading, error }: Props) {
     });
   }, []);
 
-  const columnDefs = useMemo<ColDef[]>(
-    () => [
-      {
-        headerName: 'Seq',
-        field: 'sequence',
-        width: 85,
-        sort: 'desc',
-        cellRenderer: (p: any) => <span className="font-mono font-bold">#{p.value}</span>,
-      },
-      {
-        headerName: 'Timestamp',
-        field: 'timestamp',
-        width: 175,
-        valueFormatter: (p: any) => (p.value ? new Date(p.value).toLocaleString() : '-'),
-      },
-      {
-        headerName: 'Correlation ID',
-        field: 'correlationId',
-        width: 145,
-        cellRenderer: (p: any) => (
-          <span className="font-mono text-[11px] text-gray-500 truncate" title={p.value}>
-            {p.value}
-          </span>
-        ),
-      },
-      {
-        headerName: 'Event Type',
-        field: 'eventType',
-        width: 195,
-        cellRenderer: (p: any) => {
-          const ev = String(p.value);
-          const color = ev.includes('COMPLETED') || ev.includes('SEALED')
-            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-            : ev.includes('FAILED') || ev.includes('DENIED')
-            ? 'bg-rose-50 text-rose-700 border-rose-200'
-            : 'bg-amber-50 text-amber-700 border-amber-200';
-          return (
-            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${color}`}>
-              {ev}
-            </span>
-          );
-        },
-      },
-      {
-        headerName: 'Actor',
-        valueGetter: (p: any) => `${p.data.actor?.kind || 'SYSTEM'} (${p.data.actor?.id || '-'})`,
-        width: 155,
-      },
-      {
-        headerName: 'Amount',
-        valueGetter: (p: any) => {
-          const payload = p.data?.payload;
-          if (payload?.amountMinor) {
-            const dec = formatMinorUnitsToDecimal(BigInt(payload.amountMinor), payload.currency || 'USD');
-            return `${dec} ${payload.currency || ''}`.trim();
-          }
-          return '-';
-        },
-        width: 120,
-      },
-      {
-        headerName: 'Predecessor Hash',
-        field: 'prevHash',
-        width: 150,
-        cellRenderer: (p: any) => (
-          <span className="font-mono text-[11px] text-gray-400">{p.value ? `${p.value.slice(0, 10)}...` : '-'}</span>
-        ),
-      },
-      {
-        headerName: 'Event Hash',
-        field: 'hash',
-        width: 150,
-        cellRenderer: (p: any) => (
-          <span className="font-mono text-[11px] text-emerald-600 font-semibold">{p.value ? `${p.value.slice(0, 10)}...` : '-'}</span>
-        ),
-      },
-    ],
-    []
-  );
+  const columnDefs = useMemo(() => getAuditLedgerColumns(), []);
 
   return (
     <div className="space-y-3">
@@ -120,20 +44,43 @@ export function AuditLedgerGrid({ entries, isLoading, error }: Props) {
             className="w-full pl-9 pr-3 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white dark:bg-gray-900"
           />
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center justify-between sm:justify-end gap-2">
+          <div className="flex sm:hidden bg-gray-100 dark:bg-gray-800 p-0.5 rounded-lg text-xs">
+            <button
+              onClick={() => setMobileMode('cards')}
+              className={`px-2 py-1 rounded flex items-center gap-1 ${mobileMode === 'cards' ? 'bg-white shadow-sm font-semibold' : 'text-gray-500'}`}
+            >
+              <LayoutList className="w-3 h-3" /> Cards
+            </button>
+            <button
+              onClick={() => setMobileMode('grid')}
+              className={`px-2 py-1 rounded flex items-center gap-1 ${mobileMode === 'grid' ? 'bg-white shadow-sm font-semibold' : 'text-gray-500'}`}
+            >
+              <Table className="w-3 h-3" /> Grid
+            </button>
+          </div>
+
           <span className="text-xs text-gray-400">{entries.length} events</span>
+
           <button
             onClick={onExportCsv}
             disabled={entries.length === 0}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-900 border rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 disabled:opacity-50"
           >
             <Download className="w-3.5 h-3.5 text-gray-500" /> Export CSV
           </button>
         </div>
       </div>
 
-      <div className="border rounded-xl overflow-hidden bg-white dark:bg-gray-900">
-        <div className="overflow-x-auto">
+      {mobileMode === 'cards' && (
+        <div className="block sm:hidden">
+          <MobileAuditStream entries={entries} isLoading={isLoading} />
+        </div>
+      )}
+
+      <div className={`border rounded-xl overflow-hidden bg-white dark:bg-gray-900 ${mobileMode === 'cards' ? 'hidden sm:block' : 'block'}`}>
+        <div className="overflow-x-auto w-full">
           <div className="ag-theme-quartz min-w-[760px] h-[480px]">
             <AgGridReact
               ref={gridRef}

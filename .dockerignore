@@ -1,0 +1,11 @@
+Dockerfile
+.dockerignore
+node_modules
+.next
+.git
+.github
+tests
+docs
+*.md
+.env*.local
+pnpm-debug.log*
