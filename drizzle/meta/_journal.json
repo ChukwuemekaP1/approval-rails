@@ -36,6 +36,13 @@
       "when": 1792922497417,
       "tag": "0004_clear_microchip",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792929825910,
+      "tag": "0005_sleepy_omega_sentinel",
+      "breakpoints": true
     }
   ]
 }

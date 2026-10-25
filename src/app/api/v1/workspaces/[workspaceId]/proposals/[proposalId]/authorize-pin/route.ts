@@ -8,6 +8,7 @@ import { toProblemDetailsResponse, ApiError } from '@/infrastructure/errors/api-
 import { getOrCreateCorrelationId } from '@/lib/correlation';
 import { getEnv } from '@/infrastructure/config/env';
 import { computeTermsHash } from '@/domain/proposal/canonicalize';
+import { verifyPassword } from '@/infrastructure/auth/password';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,8 +35,13 @@ export async function POST(request: NextRequest, context: RouteParams) {
     const { pin } = pinAuthSchema.parse(body);
 
     const env = getEnv();
-    if (pin !== env.DEV_AUTH_PIN && pin !== '123456') {
-      throw ApiError.badRequest('Invalid authorization PIN');
+    const isDevPin = pin === env.DEV_AUTH_PIN || pin === '123456';
+    const isStoredPasswordMatch = sessionContext.principal.passwordHash
+      ? verifyPassword(pin, sessionContext.principal.passwordHash)
+      : false;
+
+    if (!isStoredPasswordMatch && !isDevPin) {
+      throw ApiError.badRequest('Invalid authorization PIN or password');
     }
 
     const member = await authorizationService.authorizeWorkspace(

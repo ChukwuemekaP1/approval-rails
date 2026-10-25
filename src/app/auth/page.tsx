@@ -18,6 +18,7 @@ import { useAuth } from '@/ui/context/AuthContext';
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'signin' | 'register' | 'pin'>('signin');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [pin, setPin] = useState('123456');
@@ -38,7 +39,7 @@ export default function AuthPage() {
       const res = await fetch('/api/v1/auth/pin-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, displayName, pin }),
+        body: JSON.stringify({ email, displayName, pin, isSignUp }),
       });
 
       if (!res.ok) {
@@ -46,7 +47,7 @@ export default function AuthPage() {
         throw new Error(err.detail || 'Invalid PIN or sign in failed');
       }
 
-      setSuccessMsg('Authenticated! Initializing workspace...');
+      setSuccessMsg(isSignUp ? 'Account created! Initializing workspace...' : 'Authenticated! Initializing workspace...');
       await refreshSession();
       router.push('/app');
       router.refresh();
@@ -324,6 +325,27 @@ export default function AuthPage() {
             </form>
           ) : mode === 'pin' ? (
             <form onSubmit={handlePinSignIn} className="space-y-4">
+              <div className="flex rounded-lg bg-gray-100 dark:bg-gray-800 p-1 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSignUp(false)}
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                    !isSignUp ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsSignUp(true)}
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                    isSignUp ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  Create Account
+                </button>
+              </div>
+
               <div>
                 <label
                   htmlFor="pin-email"
@@ -342,29 +364,32 @@ export default function AuthPage() {
                 />
               </div>
 
-              <div>
-                <label
-                  htmlFor="pin-name"
-                  className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  Display Name (Optional)
-                </label>
-                <input
-                  id="pin-name"
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Alice Johnson"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus-visible:ring-2 focus-visible:ring-sky-500"
-                />
-              </div>
+              {isSignUp && (
+                <div>
+                  <label
+                    htmlFor="pin-name"
+                    className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1"
+                  >
+                    Display Name
+                  </label>
+                  <input
+                    id="pin-name"
+                    type="text"
+                    required
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Alice Johnson"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus-visible:ring-2 focus-visible:ring-sky-500"
+                  />
+                </div>
+              )}
 
               <div>
                 <label
                   htmlFor="pin-code"
                   className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1"
                 >
-                  PIN / Password (Default: 123456)
+                  {isSignUp ? 'Choose Password / PIN' : 'Password / PIN'}
                 </label>
                 <input
                   id="pin-code"
@@ -372,7 +397,7 @@ export default function AuthPage() {
                   required
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
-                  placeholder="123456"
+                  placeholder={isSignUp ? 'Enter a password or PIN' : '123456'}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus-visible:ring-2 focus-visible:ring-sky-500"
                 />
               </div>
@@ -386,12 +411,12 @@ export default function AuthPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Signing In...
+                      {isSignUp ? 'Creating Account...' : 'Signing In...'}
                     </>
                   ) : (
                     <>
                       <KeyRound className="w-5 h-5 mr-2" />
-                      Sign In with PIN
+                      {isSignUp ? 'Create Account with Password / PIN' : 'Sign In with Password / PIN'}
                     </>
                   )}
                 </button>

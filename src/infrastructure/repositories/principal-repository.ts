@@ -21,17 +21,26 @@ export class PrincipalRepository {
     return (rows[0] as Principal) || null;
   }
 
-  async create(data: { email: string; displayName: string }): Promise<Principal> {
+  async create(data: { email: string; displayName: string; passwordHash?: string | null }): Promise<Principal> {
     const db = getDb();
     const rows = await db
       .insert(principals)
       .values({
         email: data.email.toLowerCase().trim(),
         displayName: data.displayName.trim(),
+        passwordHash: data.passwordHash || null,
       })
       .returning();
 
     return rows[0] as Principal;
+  }
+
+  async setPasswordHash(id: string, passwordHash: string): Promise<void> {
+    const db = getDb();
+    await db
+      .update(principals)
+      .set({ passwordHash, updatedAt: new Date() })
+      .where(eq(principals.id, id));
   }
 }
 

@@ -15,7 +15,6 @@ interface Props {
   onCreateOrder?: () => Promise<void>;
   isLoading: boolean;
   authorizedAt: string | null;
-  authorizedBy: string | null;
 }
 
 export const ProposalAuthorizeBar: React.FC<Props> = ({
@@ -40,7 +39,7 @@ export const ProposalAuthorizeBar: React.FC<Props> = ({
               Mandate Authorized
             </h4>
             <p className="text-xs text-emerald-700 dark:text-emerald-400">
-              Verified at {authorizedAt ? new Date(authorizedAt).toLocaleString() : ''}
+              Verified {authorizedAt ? new Date(authorizedAt).toLocaleTimeString() : ''}
             </p>
           </div>
         </div>
@@ -62,7 +61,7 @@ export const ProposalAuthorizeBar: React.FC<Props> = ({
     return (
       <div className="p-4 bg-stone-100 dark:bg-stone-900 border border-stone-200 rounded-xl flex items-center gap-2 text-stone-600 text-xs">
         <AlertCircle className="w-4 h-4 shrink-0" />
-        <span>Proposal expired. Re-create or revise terms to proceed.</span>
+        <span>Proposal expired. Re-create or revise terms.</span>
       </div>
     );
   }
@@ -71,7 +70,7 @@ export const ProposalAuthorizeBar: React.FC<Props> = ({
     return (
       <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 rounded-xl flex items-center gap-2 text-rose-700 text-xs">
         <AlertCircle className="w-4 h-4 shrink-0" />
-        <span>Violates policy and cannot be sealed or authorized.</span>
+        <span>Violates policy and cannot be sealed.</span>
       </div>
     );
   }
@@ -83,9 +82,7 @@ export const ProposalAuthorizeBar: React.FC<Props> = ({
           {status === 'SEALED' ? 'Mandate Sealed' : 'Review Terms'}
         </h4>
         <p className="text-xs text-slate-500">
-          {status === 'SEALED'
-            ? 'Terms locked. Authorize with passkey or PIN.'
-            : 'Lock terms to seal authorization.'}
+          {status === 'SEALED' ? 'Terms locked. Authorize with passkey or PIN.' : 'Lock terms to seal.'}
         </p>
       </div>
 
@@ -123,7 +120,10 @@ export const ProposalAuthorizeBar: React.FC<Props> = ({
 
             {onAuthorizePin && (
               <button
-                onClick={() => onAuthorizePin('123456')}
+                onClick={() => {
+                  const p = window.prompt('Authorization PIN or Password:', '123456');
+                  if (p) onAuthorizePin(p);
+                }}
                 disabled={isLoading}
                 className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg"
               >

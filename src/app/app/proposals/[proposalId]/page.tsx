@@ -142,7 +142,6 @@ export default function ProposalDetailPage() {
         onCreateOrder={handleCreateOrder}
         isLoading={isActionLoading || isCreatingOrder}
         authorizedAt={proposal.authorizedAt}
-        authorizedBy={proposal.authorizedBy}
       />
     </div>
   );

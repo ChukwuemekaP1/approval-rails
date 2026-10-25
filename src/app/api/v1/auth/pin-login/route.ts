@@ -11,6 +11,7 @@ import {
 import { toProblemDetailsResponse, ApiError } from '@/infrastructure/errors/api-error';
 import { getOrCreateCorrelationId } from '@/lib/correlation';
 import { getEnv } from '@/infrastructure/config/env';
+import { hashPassword, verifyPassword } from '@/infrastructure/auth/password';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,7 @@ const pinLoginSchema = z.object({
   email: z.string().email(),
   displayName: z.string().min(1).max(255).optional(),
   pin: z.string().min(4),
+  isSignUp: z.boolean().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -25,19 +27,47 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const { email, displayName, pin } = pinLoginSchema.parse(body);
+    const { email, displayName, pin, isSignUp } = pinLoginSchema.parse(body);
 
     const env = getEnv();
-    if (pin !== env.DEV_AUTH_PIN && pin !== '123456') {
-      throw ApiError.badRequest('Invalid PIN / Password');
-    }
-
+    const isDevPin = pin === env.DEV_AUTH_PIN || pin === '123456';
     let principal = await principalRepo.findByEmail(email);
-    if (!principal) {
-      principal = await principalRepo.create({
-        email,
-        displayName: displayName || email.split('@')[0],
-      });
+
+    if (isSignUp) {
+      if (principal) {
+        if (principal.passwordHash && !verifyPassword(pin, principal.passwordHash) && !isDevPin) {
+          throw ApiError.badRequest('An account already exists with this email. Please sign in instead.');
+        }
+        if (!principal.passwordHash) {
+          await principalRepo.setPasswordHash(principal.id, hashPassword(pin));
+        }
+      } else {
+        principal = await principalRepo.create({
+          email,
+          displayName: displayName || email.split('@')[0],
+          passwordHash: hashPassword(pin),
+        });
+      }
+    } else {
+      if (!principal) {
+        principal = await principalRepo.create({
+          email,
+          displayName: displayName || email.split('@')[0],
+          passwordHash: hashPassword(pin),
+        });
+      } else {
+        const matchesStored = principal.passwordHash
+          ? verifyPassword(pin, principal.passwordHash)
+          : false;
+
+        if (!matchesStored && !isDevPin) {
+          throw ApiError.badRequest('Invalid email or password / PIN.');
+        }
+
+        if (!principal.passwordHash) {
+          await principalRepo.setPasswordHash(principal.id, hashPassword(pin));
+        }
+      }
     }
 
     const existingWorkspaces = await workspaceRepo.listForPrincipal(principal.id);
@@ -66,11 +96,7 @@ export async function POST(request: NextRequest) {
     });
 
     const response = NextResponse.json(
-      {
-        success: true,
-        principal,
-        activeWorkspace,
-      },
+      { success: true, principal, activeWorkspace },
       {
         status: 200,
         headers: { 'Content-Type': 'application/json', 'X-Correlation-Id': correlationId },
