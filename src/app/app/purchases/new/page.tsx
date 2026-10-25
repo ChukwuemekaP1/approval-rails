@@ -109,7 +109,7 @@ export default function NewPurchaseRequestPage() {
       <div>
         <div className="flex items-center gap-2">
           <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-teal/10 text-brand-teal">
-            Phase 4: Discovery & Research
+            Discovery & Research
           </span>
           <span className="text-xs text-slate-400">Workspace: {activeWorkspace.name}</span>
         </div>

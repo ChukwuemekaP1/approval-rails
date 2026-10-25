@@ -64,7 +64,7 @@ export default function TransactionsHistoryPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-5">
         <div>
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
-            Phase 6: PayPal Settlement
+            PayPal Settlement
           </span>
           <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white mt-1">
             Activity & Settlement

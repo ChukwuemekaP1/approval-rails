@@ -22,7 +22,7 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200 dark:border-gray-800">
         <div>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
-            Phase 5: Proposals & Passkey Mandates
+            Proposals & Passkey Mandates
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 mt-1">
             ApproveRail Dashboard
@@ -98,7 +98,7 @@ export default function DashboardPage() {
               <Clock className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">Settlement</h3>
-            <p className="text-xs text-gray-500 mt-1">PayPal Orders v2 capture status (Phase 6).</p>
+            <p className="text-xs text-gray-500 mt-1">PayPal Orders v2 capture status.</p>
           </div>
           <div className="flex items-center text-xs font-medium text-amber-600 pt-3">
             View Activity <ArrowRight className="w-3.5 h-3.5 ml-1" />

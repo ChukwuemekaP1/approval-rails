@@ -140,7 +140,7 @@ export default function WorkspacesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200 dark:border-gray-800">
         <div>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-            Phase 2: Multi-Tenancy Active
+            Multi-Tenancy Active
           </span>
           <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 mt-1">
             Workspaces & Membership

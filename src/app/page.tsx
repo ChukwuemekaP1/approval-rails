@@ -32,7 +32,7 @@ export default function HomePage() {
       <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-12 space-y-12 w-full">
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-            Phase 1 Greenfield Architecture
+            Cryptographic Purchasing Governance
           </span>
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white">
             AI Can Recommend. <br />
@@ -93,7 +93,7 @@ export default function HomePage() {
       </main>
 
       <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-6 py-4 text-center text-xs text-gray-500">
-        ApproveRail Greenfield Modular Monolith • Phase 1
+        ApproveRail Modular Monolith • Cryptographic Consent & Audit Trail
       </footer>
     </div>
   );

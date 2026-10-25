@@ -36,7 +36,6 @@ const SECONDARY_NAV: NavItem[] = [
   { name: 'Workspaces', href: '/app/workspaces', icon: Layers },
   { name: 'Verify Evidence', href: '/app/verify', icon: FileSearch },
   { name: 'Settings', href: '/app/settings', icon: Settings },
-  { name: 'Adversarial Lab', href: '/app/lab', icon: FlaskConical, phaseBadge: 'Demo' },
 ];
 
 export function DesktopSidebar() {
@@ -112,11 +111,6 @@ export function DesktopSidebar() {
                       />
                       <span className="truncate">{item.name}</span>
                     </div>
-                    {item.phaseBadge && (
-                      <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                        {item.phaseBadge}
-                      </span>
-                    )}
                   </Link>
                 );
               })}

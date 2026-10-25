@@ -25,7 +25,7 @@ export function AppHeader() {
           </span>
         </Link>
         <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-          Phase 2: Auth Active
+          Protected by Passkey
         </span>
       </div>
 

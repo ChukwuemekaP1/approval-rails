@@ -58,7 +58,7 @@ export default function LedgerPage() {
     <div className="max-w-5xl mx-auto space-y-6 pb-16">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
         <div>
-          <span className="text-[11px] font-bold text-sky-600 uppercase">Phase 7: Evidence Trail</span>
+          <span className="text-[11px] font-bold text-sky-600 uppercase">Cryptographic Audit Trail</span>
           <h1 className="text-xl font-black text-gray-900 dark:text-white">Operational Ledger</h1>
           <p className="text-xs text-gray-500">Tamper-evident hash-chained sequence of workspace events.</p>
         </div>
