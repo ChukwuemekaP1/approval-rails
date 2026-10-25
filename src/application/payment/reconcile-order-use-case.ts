@@ -5,6 +5,7 @@ import { PaymentGatewayPort } from './payment-ports';
 import { Order } from '@/domain/payment/types';
 import { OrderNotFoundError, UnauthorizedPaymentActionError } from '@/domain/payment/errors';
 import { baseLogger } from '@/infrastructure/logging/logger';
+import { recordLedgerEventSafe } from '@/application/ledger/record-ledger-event';
 
 export class ReconcileOrderUseCase {
   constructor(
@@ -28,28 +29,21 @@ export class ReconcileOrderUseCase {
     const ppOrder = await this.gateway.getOrder(order.paypalOrderId);
 
     const now = new Date();
-    if (ppOrder.status === 'COMPLETED') {
-      return await this.orderRepo.updateStatus(order.id, 'COMPLETED', {
-        reconciledAt: now,
-      });
-    }
-
-    if (ppOrder.status === 'VOIDED' || ppOrder.status === 'FAILED') {
-      return await this.orderRepo.updateStatus(order.id, 'FAILED', {
-        reconciledAt: now,
-        failureReason: `Reconciled as ${ppOrder.status} from PayPal`,
-      });
-    }
-
-    if (ppOrder.status === 'APPROVED') {
-      return await this.orderRepo.updateStatus(order.id, 'APPROVAL_PENDING', {
-        reconciledAt: now,
-      });
-    }
-
-    return await this.orderRepo.updateStatus(order.id, order.status, {
+    const updated = await this.orderRepo.updateStatus(order.id, ppOrder.status === 'COMPLETED' ? 'COMPLETED' : ppOrder.status === 'VOIDED' || ppOrder.status === 'FAILED' ? 'FAILED' : ppOrder.status === 'APPROVED' ? 'APPROVAL_PENDING' : order.status, {
       reconciledAt: now,
+      ...(ppOrder.status === 'VOIDED' || ppOrder.status === 'FAILED' ? { failureReason: `Reconciled as ${ppOrder.status} from PayPal` } : {}),
     });
+
+    await recordLedgerEventSafe({
+      workspaceId,
+      streamId: order.id,
+      correlationId: order.id,
+      eventType: 'RECONCILIATION_COMPLETED',
+      actor: { kind: 'SYSTEM', id: 'reconciler' },
+      payload: { orderId: order.id, previousStatus: order.status, reconciledStatus: ppOrder.status },
+    });
+
+    return updated;
   }
 }
 

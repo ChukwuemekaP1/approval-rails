@@ -13,7 +13,7 @@ interface TransactionListItemProps {
 export function TransactionListItem({ order }: TransactionListItemProps) {
   return (
     <Link
-      href={`/app/orders/${order.id}`}
+      href={`/app/transactions/${order.id}`}
       className="p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-sky-500 rounded-xl shadow-sm transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
     >
       <div className="space-y-1">

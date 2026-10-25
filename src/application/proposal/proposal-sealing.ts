@@ -2,6 +2,7 @@ import { proposalRepo } from '@/infrastructure/repositories/proposal-repository'
 import { authorizationService } from '@/application/auth/authorization-service';
 import { assertValidTransition } from '@/domain/proposal/state-machine';
 import { Proposal } from '@/domain/proposal/types';
+import { recordLedgerEventSafe } from '@/application/ledger/record-ledger-event';
 
 export async function sealProposal(
   proposalId: string,
@@ -22,6 +23,22 @@ export async function sealProposal(
 
   await proposalRepo.updateStatus(proposalId, workspaceId, 'SEALED');
   proposal.status = 'SEALED';
+
+  await recordLedgerEventSafe({
+    workspaceId,
+    streamId: proposalId,
+    correlationId: proposal.sourceRequestId || proposalId,
+    eventType: 'TERMS_SEALED',
+    actor: { kind: 'USER', id: principalId },
+    payload: {
+      proposalId,
+      termsHash: proposal.termsHash,
+      merchant: proposal.merchant,
+      amountMinor: proposal.totalAmountMinor.toString(),
+      currency: proposal.currency,
+    },
+  });
+
   return proposal;
 }
 

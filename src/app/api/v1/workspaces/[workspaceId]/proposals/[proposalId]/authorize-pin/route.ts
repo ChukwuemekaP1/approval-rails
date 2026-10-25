@@ -9,6 +9,7 @@ import { getOrCreateCorrelationId } from '@/lib/correlation';
 import { getEnv } from '@/infrastructure/config/env';
 import { computeTermsHash } from '@/domain/proposal/canonicalize';
 import { verifyPassword } from '@/infrastructure/auth/password';
+import { recordLedgerEventSafe } from '@/application/ledger/record-ledger-event';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +80,15 @@ export async function POST(request: NextRequest, context: RouteParams) {
         authorizedAt: new Date().toISOString(),
       }
     );
+
+    await recordLedgerEventSafe({
+      workspaceId,
+      streamId: proposalId,
+      correlationId: proposal.sourceRequestId || proposalId,
+      eventType: 'AUTHORIZATION_VERIFIED',
+      actor: { kind: 'USER', id: sessionContext.principal.id, name: sessionContext.principal.displayName },
+      payload: { proposalId, termsHash: proposal.termsHash, mode: 'PIN_CREDENTIAL' },
+    });
 
     const updated = await proposalRepo.getById(proposalId, workspaceId);
 

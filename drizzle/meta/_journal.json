@@ -43,6 +43,13 @@
       "when": 1792929825910,
       "tag": "0005_sleepy_omega_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792931011029,
+      "tag": "0006_careful_otto_octavius",
+      "breakpoints": true
     }
   ]
 }

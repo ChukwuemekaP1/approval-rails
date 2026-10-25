@@ -4,6 +4,7 @@ import { passkeyRepo } from '@/infrastructure/repositories/passkey-repository';
 import { webAuthnAdapter } from '@/infrastructure/auth/webauthn-adapter';
 import { authorizationService } from '@/application/auth/authorization-service';
 import { computeTermsHash } from '@/domain/proposal/canonicalize';
+import { recordLedgerEventSafe } from '@/application/ledger/record-ledger-event';
 import { assertValidTransition } from '@/domain/proposal/state-machine';
 import { Proposal } from '@/domain/proposal/types';
 import { AuthenticationResponseJSON } from '@simplewebauthn/server';
@@ -116,6 +117,15 @@ export async function authorizeProposal(
     credentialId: passkey.credentialId,
     counter: verification.authenticationInfo.newCounter,
     authorizedAt: new Date().toISOString(),
+  });
+
+  await recordLedgerEventSafe({
+    workspaceId,
+    streamId: proposalId,
+    correlationId: proposal.sourceRequestId || proposalId,
+    eventType: 'AUTHORIZATION_VERIFIED',
+    actor: { kind: 'USER', id: principalId },
+    payload: { proposalId, termsHash: proposal.termsHash, mode: 'WEBAUTHN_PASSKEY' },
   });
 
   return (await proposalRepo.getById(proposalId, workspaceId))!;

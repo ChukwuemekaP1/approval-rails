@@ -233,5 +233,45 @@
 
 ## Roadmap & Next Gates
 
-### Phase 7: Operational Ledger, Evidence Trail & Verification
-- Deliverables: Append-only ledger events with hash chaining, offline bundle export, independent verification viewer `/app/verify`, AG Grid operational table.
+### Phase 7: Operational Ledger, Evidence Trail & Verification (Completed)
+**Status**: Completed
+
+### Scope & Deliverables
+- [x] **Append-Only Ledger Domain & Cryptographic Hash Chaining**:
+  - `src/domain/ledger/types.ts`: `LedgerEventType`, `LedgerActor`, `LedgerEntry`, `EvidenceBundle`, `VerificationResult`.
+  - `src/domain/ledger/canonicalize.ts`: RFC 8785 deterministic JSON Canonicalization Scheme (JCS) with lexicographical key sorting, standard genesis anchor (`0000000000000000000000000000000000000000000000000000000000000000`), and SHA-256 hex digest computation via `globalThis.crypto.subtle`.
+  - `src/domain/ledger/redaction.ts`: `sanitizePayload` preventing secrets, passwords, PINs, tokens, and passkey challenges from persisting into event payloads.
+  - `src/domain/ledger/verifier.ts`: Pure offline `verifyEvidenceBundle` checking schema version, genesis anchor, sequence gaps, cryptographic predecessor links (`prevHash === prev.hash`), payload integrity, and head hash matching.
+- [x] **PostgreSQL Schema, Immutability Trigger & Advisory Locks**:
+  - Added `ledger_entries` table in `src/infrastructure/db/schema.ts` with columns (`id`, `workspace_id`, `stream_id`, `correlation_id`, `sequence`, `event_type`, `actor_kind`, `actor_id`, `actor_name`, `payload`, `prev_hash`, `hash`, `created_at`) and composite unique index on `(stream_id, sequence)`.
+  - Forward-only migration `drizzle/0006_careful_otto_octavius.sql` executed against live Neon PostgreSQL database.
+  - Database-level immutability enforcement: PostgreSQL function `prevent_ledger_mutation()` and trigger `trg_ledger_entries_immutable` preventing any `UPDATE` or `DELETE` at the database engine level.
+  - Concurrency serialization: per-stream PostgreSQL advisory transaction lock (`SELECT pg_advisory_xact_lock(hashtext(streamId))`) preventing race conditions during concurrent monotonic appends.
+- [x] **Lifecycle Event Recording**:
+  - Emitted tamper-evident ledger events across all critical workflows:
+    - `REQUEST_CREATED`, `RESEARCH_COMPLETED`, `PROPOSAL_CREATED`, `TERMS_SEALED`, `AUTHORIZATION_VERIFIED`, `ORDER_CREATED`, `CAPTURE_REQUESTED`, `CAPTURE_COMPLETED`, `CAPTURE_UNKNOWN`, `CAPTURE_FAILED`, `WEBHOOK_PROCESSED`, `RECONCILIATION_COMPLETED`.
+- [x] **API Endpoints**:
+  - `GET /api/v1/workspaces/[workspaceId]/ledger`: Paginated, filterable operational ledger listing.
+  - `GET /api/v1/workspaces/[workspaceId]/ledger/export`: Standalone evidence bundle JSON export.
+  - `POST /api/v1/verify`: Stateless offline cryptographic verification endpoint.
+  - `GET /api/v1/workspaces/[workspaceId]/transactions`: Filterable transaction list.
+  - `GET /api/v1/workspaces/[workspaceId]/transactions/[transactionId]`: Complete transaction details with proposal snapshot and full ledger stream.
+- [x] **Operational UI Pages**:
+  - `/app/transactions`: Workspace transaction activity list with status indicators and direct links.
+  - `/app/transactions/[transactionId]`: Transaction receipt, order details, timeline, and one-click "Export Evidence (.json)" action.
+  - `/app/ledger`: Role/workspace-protected operational ledger with Table view and Timeline view toggles, event filters, and direct links to verify.
+  - `/app/verify`: Independent client-side verifier accepting file drag-and-drop or pasted JSON with step-by-step cryptographic audit results and tamper reason codes.
+- [x] **Testing & Verification**:
+  - Unit tests: `tests/unit/ledger-domain.test.ts` (4 tests).
+  - Integration tests: `tests/integration/ledger-integration.test.ts` (3 tests) verifying monotonic sequence, trigger immutability rejection, and parallel append concurrency.
+  - UI tests: `tests/ui/ledger-pages.test.tsx` (2 tests).
+  - All test files passing against live Neon PostgreSQL database.
+  - Typecheck (`tsc --noEmit`): 0 errors.
+  - Production build (`next build`): 17/17 pages static and dynamic routes compiled successfully.
+
+---
+
+## Roadmap & Next Gates
+
+### Phase 8: Notifications, Outbox & Audit Exports
+- Deliverables: Transactional outbox, event notification handlers, audit export formats, webhook subscriptions.

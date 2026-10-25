@@ -11,6 +11,7 @@ import {
 } from '@/domain/payment/errors';
 import { assertValidPaymentTransition } from '@/domain/payment/state-machine';
 import { baseLogger } from '@/infrastructure/logging/logger';
+import { recordLedgerEventSafe } from '@/application/ledger/record-ledger-event';
 
 export interface CaptureOrderCommand {
   principalId: string;
@@ -50,25 +51,67 @@ export class CaptureOrderUseCase {
 
     const captureKey = `cap_${order.id}_${Date.now()}`;
 
+    await recordLedgerEventSafe({
+      workspaceId,
+      streamId: order.id,
+      correlationId: order.id,
+      eventType: 'CAPTURE_REQUESTED',
+      actor: { kind: 'USER', id: principalId },
+      payload: { orderId: order.id, paypalOrderId: order.paypalOrderId },
+    });
+
     try {
       const result = await this.gateway.captureOrder(order.paypalOrderId, captureKey);
 
-      return await this.orderRepo.updateStatus(order.id, 'COMPLETED', {
+      const updated = await this.orderRepo.updateStatus(order.id, 'COMPLETED', {
         captureId: result.captureId,
         capturedAt: new Date(),
       });
+
+      await recordLedgerEventSafe({
+        workspaceId,
+        streamId: order.id,
+        correlationId: order.id,
+        eventType: 'CAPTURE_COMPLETED',
+        actor: { kind: 'USER', id: principalId },
+        payload: { orderId: order.id, captureId: result.captureId },
+      });
+
+      return updated;
     } catch (err: any) {
       if (err instanceof PayPalTimeoutError || err.name === 'PayPalTimeoutError') {
         baseLogger.warn({ orderId }, 'Outbound capture timed out; setting state to UNKNOWN');
-        return await this.orderRepo.updateStatus(order.id, 'UNKNOWN', {
+        const updated = await this.orderRepo.updateStatus(order.id, 'UNKNOWN', {
           failureReason: 'Capture request timed out. Awaiting reconciliation.',
         });
+
+        await recordLedgerEventSafe({
+          workspaceId,
+          streamId: order.id,
+          correlationId: order.id,
+          eventType: 'CAPTURE_UNKNOWN',
+          actor: { kind: 'SYSTEM', id: 'paypal-gateway' },
+          payload: { orderId: order.id, reason: 'Capture request timed out' },
+        });
+
+        return updated;
       }
 
       baseLogger.error({ orderId, err: err.message }, 'PayPal capture failed');
-      return await this.orderRepo.updateStatus(order.id, 'FAILED', {
+      const updated = await this.orderRepo.updateStatus(order.id, 'FAILED', {
         failureReason: err.details?.message || err.message || 'Capture declined',
       });
+
+      await recordLedgerEventSafe({
+        workspaceId,
+        streamId: order.id,
+        correlationId: order.id,
+        eventType: 'CAPTURE_FAILED',
+        actor: { kind: 'PROVIDER', id: 'paypal-gateway' },
+        payload: { orderId: order.id, error: err.message },
+      });
+
+      return updated;
     }
   }
 }

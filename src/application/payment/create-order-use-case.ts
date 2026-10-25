@@ -11,6 +11,7 @@ import {
   InvalidPaymentStateError,
 } from '@/domain/payment/errors';
 import { getEnv } from '@/infrastructure/config/env';
+import { recordLedgerEventSafe } from '@/application/ledger/record-ledger-event';
 
 export interface CreateOrderCommand {
   principalId: string;
@@ -101,7 +102,25 @@ export class CreateOrderUseCase {
       updatedAt: now,
     };
 
-    return await this.orderRepo.create(newOrder);
+    const created = await this.orderRepo.create(newOrder);
+
+    await recordLedgerEventSafe({
+      workspaceId,
+      streamId: orderId,
+      correlationId: proposal.sourceRequestId || orderId,
+      eventType: 'ORDER_CREATED',
+      actor: { kind: 'USER', id: principalId },
+      payload: {
+        orderId,
+        proposalId,
+        paypalOrderId: ppOrder.paypalOrderId,
+        amountMinor: proposal.totalAmountMinor.toString(),
+        currency: proposal.currency,
+        merchant: proposal.merchant,
+      },
+    });
+
+    return created;
   }
 }
 

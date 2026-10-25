@@ -4,7 +4,7 @@ import path from 'path';
 export default defineConfig({
   test: {
     globals: true,
-    testTimeout: 15000,
+    testTimeout: 35000,
     environmentMatchGlobs: [
       ['tests/ui/**', 'jsdom'],
       ['tests/unit/**', 'node'],

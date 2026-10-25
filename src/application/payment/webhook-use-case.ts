@@ -4,6 +4,7 @@ import { PaymentGatewayPort } from './payment-ports';
 import { WebhookSignatureVerificationError } from '@/domain/payment/errors';
 import { baseLogger } from '@/infrastructure/logging/logger';
 import { getEnv } from '@/infrastructure/config/env';
+import { recordLedgerEventSafe } from '@/application/ledger/record-ledger-event';
 
 export interface WebhookCommand {
   headers: Record<string, string>;
@@ -90,6 +91,15 @@ export class PayPalWebhookUseCase {
         failureReason: resource.status_details?.reason || 'Capture denied by PayPal',
       });
     }
+
+    await recordLedgerEventSafe({
+      workspaceId: order.workspaceId,
+      streamId: order.id,
+      correlationId: order.id,
+      eventType: 'WEBHOOK_PROCESSED',
+      actor: { kind: 'PROVIDER', id: 'paypal-webhook' },
+      payload: { eventType, paypalOrderId, resourceId: resource.id },
+    });
   }
 }
 
