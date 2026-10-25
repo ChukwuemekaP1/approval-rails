@@ -8,6 +8,7 @@ import {
   ShoppingCart,
   FileCheck2,
   Clock,
+  ShieldCheck,
   Layers,
   ScrollText,
   FileSearch,
@@ -25,6 +26,7 @@ interface NavItem {
 const PRIMARY_NAV: NavItem[] = [
   { name: 'Dashboard', href: '/app', icon: Home },
   { name: 'Buy / Request', href: '/app/purchases/new', icon: ShoppingCart },
+  { name: 'Proposals', href: '/app/proposals', icon: ShieldCheck },
   { name: 'Activity', href: '/app/transactions', icon: Clock },
   { name: 'Policies', href: '/app/policies', icon: FileCheck2 },
   { name: 'Ledger', href: '/app/ledger', icon: ScrollText },
