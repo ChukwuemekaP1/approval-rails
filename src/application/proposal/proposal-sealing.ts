@@ -3,6 +3,7 @@ import { authorizationService } from '@/application/auth/authorization-service';
 import { assertValidTransition } from '@/domain/proposal/state-machine';
 import { Proposal } from '@/domain/proposal/types';
 import { recordLedgerEventSafe } from '@/application/ledger/record-ledger-event';
+import { recordOutboxEventSafe } from '@/application/notification/record-outbox-event';
 
 export async function sealProposal(
   proposalId: string,
@@ -37,6 +38,16 @@ export async function sealProposal(
       amountMinor: proposal.totalAmountMinor.toString(),
       currency: proposal.currency,
     },
+  });
+
+  await recordOutboxEventSafe({
+    workspaceId,
+    eventType: 'PROPOSAL_READY_FOR_REVIEW',
+    resourceId: proposalId,
+    summary: `Proposal ${proposalId} sealed and ready for authorization`,
+    amountMinor: proposal.totalAmountMinor.toString(),
+    currency: proposal.currency,
+    merchant: proposal.merchant,
   });
 
   return proposal;

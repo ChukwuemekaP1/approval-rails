@@ -14,6 +14,10 @@ const SENSITIVE_KEYS = [
   'accessToken',
   'refreshToken',
   'passkeyPrivateKey',
+  'zapierWebhookUrl',
+  'zapier_webhook_url',
+  'webhookUrl',
+  'webhook_url',
 ];
 
 const redactPaths = [

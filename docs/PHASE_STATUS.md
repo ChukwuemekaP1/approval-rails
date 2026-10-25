@@ -273,5 +273,46 @@
 
 ## Roadmap & Next Gates
 
-### Phase 8: Notifications, Outbox & Audit Exports
-- Deliverables: Transactional outbox, event notification handlers, audit export formats, webhook subscriptions.
+### Phase 8: Notifications, Outbox & Audit Exports (Completed)
+**Status**: Completed
+
+### Scope & Deliverables
+- [x] **AG Grid Community Operational Audit Grid**:
+  - Reusable `AuditLedgerGrid.tsx` (`ag-grid-community`, `ag-grid-react`) integrated into `/app/ledger`.
+  - Columns: Sequence (#), Timestamp (locale formatted), Correlation ID, Event Type (color-coded badge), Actor, Amount/Currency (safely extracted from payload), Predecessor Hash, Event Hash.
+  - Features: Quick search filter, column sorting, pagination (10/25/50 per page), CSV export (`gridApi.exportDataAsCsv()`), loading/empty overlays.
+  - Container-constrained horizontal scrolling (`overflow-x-auto`) styled with app tokens so it never causes page-wide horizontal scroll on mobile viewports.
+- [x] **Asynchronous Transactional Notification Outbox**:
+  - PostgreSQL schema `notification_outbox` and `workspace_notification_settings` with migration `0007_ancient_kree.sql` applied to live Neon database.
+  - Enqueues minimized, sanitized advisory events in transactions with business state changes: `PROPOSAL_READY_FOR_REVIEW`, `POLICY_DENIED`, `PAYMENT_COMPLETED`, `PAYMENT_FAILED`, `PAYMENT_RECONCILIATION_REQUIRED`, and `TEST_NOTIFICATION`.
+  - Non-blocking execution ensures notification dispatch failures never cause payment capture failure or duplicate capture.
+- [x] **Resilient Dispatcher & Secret Redaction**:
+  - `OutboxDispatcherUseCase` dispatches minimal JSON payloads to configured Zapier webhook endpoint with 5s timeout.
+  - Bounded exponential backoff: $2^n \times 1\text{s}$ capped at 60s, maximum 5 attempts.
+  - Terminal classification: 2xx $\rightarrow$ `DISPATCHED`, 4xx $\rightarrow$ `DEAD_LETTER`, 5xx/network timeout $\rightarrow$ `PENDING` (retry).
+  - Zapier webhook URL treated as sensitive secret: masked in UI and redacted in server logs.
+- [x] **Settings & Integrations UI (`/app/settings`)**:
+  - Webhook URL configuration with mask/show toggle.
+  - Integration status badge ("Active & Connected", "Disabled", "Not Configured").
+  - Granular event type subscription toggles.
+  - "Send Test Ping" action for immediate live connectivity verification without impersonating real payment.
+  - Outbox delivery log & audit trail table displaying event type, status, HTTP code, retry count, and timestamp.
+- [x] **API Endpoints**:
+  - `GET /api/v1/workspaces/[workspaceId]/notifications/settings`
+  - `PUT /api/v1/workspaces/[workspaceId]/notifications/settings`
+  - `GET /api/v1/workspaces/[workspaceId]/notifications/history`
+  - `POST /api/v1/workspaces/[workspaceId]/notifications/test`
+  - `POST /api/v1/workspaces/[workspaceId]/notifications/dispatch`
+- [x] **Testing & Verification**:
+  - Unit tests: `tests/unit/notification-domain.test.ts` (5 tests).
+  - Integration tests: `tests/integration/notification-outbox.test.ts` (4 tests) verifying atomicity, transient backoff, 400 dead letter classification, and payment capture safety isolation.
+  - UI tests: `tests/ui/audit-grid.test.tsx` (3 tests) & `tests/ui/settings-page.test.tsx` (2 tests).
+  - Typecheck (`tsc --noEmit`): 0 errors.
+  - Production build (`next build`): 17/17 pages static and dynamic routes compiled successfully.
+
+---
+
+## Roadmap & Next Gates
+
+### Phase 9: Final Release Hardening & Operations
+- Deliverables: Production hardening, monitoring dashboards, documentation, performance benchmarks.

@@ -12,6 +12,7 @@ import {
 import { assertValidPaymentTransition } from '@/domain/payment/state-machine';
 import { baseLogger } from '@/infrastructure/logging/logger';
 import { recordLedgerEventSafe } from '@/application/ledger/record-ledger-event';
+import { recordOutboxEventSafe } from '@/application/notification/record-outbox-event';
 
 export interface CaptureOrderCommand {
   principalId: string;
@@ -77,6 +78,16 @@ export class CaptureOrderUseCase {
         payload: { orderId: order.id, captureId: result.captureId },
       });
 
+      await recordOutboxEventSafe({
+        workspaceId,
+        eventType: 'PAYMENT_COMPLETED',
+        resourceId: order.id,
+        summary: `Payment completed for order ${order.id}`,
+        amountMinor: order.amountMinor,
+        currency: order.currency,
+        merchant: order.merchant,
+      });
+
       return updated;
     } catch (err: any) {
       if (err instanceof PayPalTimeoutError || err.name === 'PayPalTimeoutError') {
@@ -94,6 +105,16 @@ export class CaptureOrderUseCase {
           payload: { orderId: order.id, reason: 'Capture request timed out' },
         });
 
+        await recordOutboxEventSafe({
+          workspaceId,
+          eventType: 'PAYMENT_RECONCILIATION_REQUIRED',
+          resourceId: order.id,
+          summary: `Capture timed out for order ${order.id}; reconciliation required`,
+          amountMinor: order.amountMinor,
+          currency: order.currency,
+          reason: 'Capture request timed out',
+        });
+
         return updated;
       }
 
@@ -109,6 +130,16 @@ export class CaptureOrderUseCase {
         eventType: 'CAPTURE_FAILED',
         actor: { kind: 'PROVIDER', id: 'paypal-gateway' },
         payload: { orderId: order.id, error: err.message },
+      });
+
+      await recordOutboxEventSafe({
+        workspaceId,
+        eventType: 'PAYMENT_FAILED',
+        resourceId: order.id,
+        summary: `Payment failed for order ${order.id}`,
+        amountMinor: order.amountMinor,
+        currency: order.currency,
+        reason: err.message,
       });
 
       return updated;

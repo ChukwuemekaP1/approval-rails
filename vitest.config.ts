@@ -5,6 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     testTimeout: 35000,
+    fileParallelism: false,
     environmentMatchGlobs: [
       ['tests/ui/**', 'jsdom'],
       ['tests/unit/**', 'node'],

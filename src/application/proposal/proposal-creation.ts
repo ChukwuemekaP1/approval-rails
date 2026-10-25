@@ -8,6 +8,7 @@ import { isModifiableStatus } from '@/domain/proposal/state-machine';
 import { Proposal, ProposalTerms } from '@/domain/proposal/types';
 import { evaluatePolicy } from '@/domain/policy/evaluator';
 import { PolicyEvaluationContext } from '@/domain/policy/types';
+import { recordOutboxEventSafe } from '@/application/notification/record-outbox-event';
 
 export interface CreateProposalParams {
   workspaceId: string;
@@ -64,7 +65,7 @@ export async function createProposal(params: CreateProposalParams): Promise<Prop
   const canonicalTermsJson = canonicalizeProposalTerms(terms);
   const termsHash = computeTermsHash(canonicalTermsJson);
 
-  return proposalRepo.create(
+  const created = await proposalRepo.create(
     {
       workspaceId,
       requesterId,
@@ -82,6 +83,21 @@ export async function createProposal(params: CreateProposalParams): Promise<Prop
     },
     lineItems
   );
+
+  if (!evaluation.passed) {
+    await recordOutboxEventSafe({
+      workspaceId,
+      eventType: 'POLICY_DENIED',
+      resourceId: created.id,
+      summary: `Proposal ${created.id} denied by policy: ${evaluation.reasons.join(', ')}`,
+      amountMinor: totalAmountMinor.toString(),
+      currency,
+      merchant,
+      reason: evaluation.reasons.join(', '),
+    });
+  }
+
+  return created;
 }
 
 export async function reviseBasket(

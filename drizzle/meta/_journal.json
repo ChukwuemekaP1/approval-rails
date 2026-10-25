@@ -50,6 +50,13 @@
       "when": 1792931011029,
       "tag": "0006_careful_otto_octavius",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792937384762,
+      "tag": "0007_ancient_kree",
+      "breakpoints": true
     }
   ]
 }

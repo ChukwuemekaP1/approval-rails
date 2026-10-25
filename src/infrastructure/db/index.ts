@@ -15,7 +15,7 @@ export function getDbPool(): pg.Pool {
       connectionString: env.DATABASE_URL,
       min: env.DATABASE_POOL_MIN,
       max: env.DATABASE_POOL_MAX,
-      connectionTimeoutMillis: 3000,
+      connectionTimeoutMillis: 10000,
       idleTimeoutMillis: 30000,
     });
 
