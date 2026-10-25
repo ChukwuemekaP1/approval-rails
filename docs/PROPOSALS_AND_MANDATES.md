@@ -22,6 +22,7 @@ ApproveRail's Phase 5 introduces the purchase mandate lifecycle: transforming re
    - The server creates a single-use, 5-minute expiring challenge associated with `flowType = 'MANDATE_AUTHORIZATION'` and binds it to the proposal's `auth_challenge` column.
    - Any basket modification invalidates prior authorization challenges (`authChallenge = null`).
    - The server verifies the WebAuthn signature assertion against the user's registered passkey and verifies that `computeTermsHash(proposal.canonicalTermsJson) === proposal.termsHash` before transitioning the mandate to `AUTHORIZED`.
+   - **Guarantee Precision**: WebAuthn proves an authenticator assertion with user verification/presence according to the credential settings bound to this exact terms digest. It does not claim to prove legal identity or make every device's biometric a portable signature.
 5. **Multi-Tenant and Role Isolation**:
    - All operations require authenticated session, workspace membership, and resource authorization.
    - Policies flagged with `REQUIRES_ADMIN_APPROVAL` require the signing user to hold the `ADMIN` role.

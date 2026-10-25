@@ -73,6 +73,9 @@ export const ProposalAuthorizeBar: React.FC<Props> = ({
             ? 'Terms are locked. Sign with your WebAuthn passkey to authorize.'
             : 'Lock and seal exact terms to generate hardware-bound authorization challenge.'}
         </p>
+        <p className="text-[10px] text-slate-400 mt-0.5">
+          WebAuthn proves authenticator assertion & presence bound to the terms hash; does not claim portable legal signature.
+        </p>
       </div>
 
       <div className="flex items-center gap-2">
