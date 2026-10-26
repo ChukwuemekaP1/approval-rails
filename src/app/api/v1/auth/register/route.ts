@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
         success: true,
         principal: { id: principal.id, email: principal.email, displayName: principal.displayName },
         activeWorkspace,
-        redirectTo: workspaceType === 'BUSINESS' ? '/app/policies' : '/app/shop',
+        redirectTo: '/onboarding',
       },
       { status: 201, headers: { 'X-Correlation-Id': correlationId } }
     );

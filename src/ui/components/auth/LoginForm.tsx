@@ -32,7 +32,7 @@ export function LoginForm() {
       }
 
       await refreshSession();
-      router.push('/app/shop');
+      router.push(data.redirectTo || '/app');
       router.refresh();
     } catch (err: any) {
       setErrorMsg(err.message || 'Login error occurred');

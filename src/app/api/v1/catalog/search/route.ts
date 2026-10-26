@@ -11,9 +11,21 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || undefined;
     const category = searchParams.get('category') || undefined;
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : 10;
+    const brand = searchParams.get('brand') || undefined;
+    const condition = searchParams.get('condition') || undefined;
+    const minPrice = searchParams.get('minPrice') ? parseFloat(searchParams.get('minPrice')!) : undefined;
+    const maxPrice = searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined;
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : 12;
 
-    const results = await discoveryService.search({ query, category, limit });
+    const results = await discoveryService.search({
+      query,
+      category,
+      brand,
+      condition,
+      minPrice,
+      maxPrice,
+      limit,
+    });
 
     // Format BigInt values to string for JSON serialization
     const serializedProducts = results.products.map((p) => ({

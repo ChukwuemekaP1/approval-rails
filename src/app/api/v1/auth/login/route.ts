@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { principalRepo } from '@/infrastructure/repositories/principal-repository';
 import { workspaceRepo } from '@/infrastructure/repositories/workspace-repository';
 import { sessionRepo } from '@/infrastructure/repositories/session-repository';
+import { policyRepo } from '@/infrastructure/repositories/policy-repository';
 import {
   generateSessionToken,
   SESSION_MAX_AGE_SECONDS,
@@ -79,11 +80,15 @@ export async function POST(request: NextRequest) {
       ipAddress: ip,
     });
 
+    const activePolicy = await policyRepo.getActivePolicy(activeWorkspace.id);
+    const redirectTo = activePolicy ? '/app' : '/onboarding';
+
     const response = NextResponse.json(
       {
         success: true,
         principal: { id: principal.id, email: principal.email, displayName: principal.displayName },
         activeWorkspace,
+        redirectTo,
       },
       { headers: { 'X-Correlation-Id': correlationId } }
     );

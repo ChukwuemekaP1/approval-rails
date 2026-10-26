@@ -42,7 +42,7 @@ export function SignUpForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || data.title || 'Registration failed');
       await refreshSession();
-      router.push(data.redirectTo || '/app/shop');
+      router.push(data.redirectTo || '/onboarding');
       router.refresh();
     } catch (err: any) {
       setErrorMsg(err.message || 'Registration error');

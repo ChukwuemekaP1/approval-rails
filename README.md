@@ -1,109 +1,142 @@
 # ApproveRail
 
-**ApproveRail** is an AI-assisted purchasing and payment-control application for consumers and small businesses. A user explains what they need; the application researches catalog items; the AI can recommend but cannot authorize or execute payments; the user reviews the exact basket and merchant; deterministic server-side policy checks run; the user authorizes the exact terms using WebAuthn / FIDO2 passkeys; and the application prepares cryptographic purchase mandates.
+> **"AI proposes. You authorize. Every payment leaves proof."**
+
+ApproveRail is an AI-assisted procurement and payment-governance platform for individuals and businesses. Users discover real products from live merchants, refine specific requirements, build persistent multi-item procurement baskets, enforce deterministic spending limits, obtain managerial approvals, authorize purchases cryptographically with WebAuthn passkeys or PIN, settle securely with PayPal, and maintain an immutable hash-chained audit ledger.
 
 ---
 
-## Architecture & Security Invariants
+## 1. Complete End-to-End User Journey
 
-ApproveRail is built as a **Modular Monolith** using the Next.js App Router, TypeScript, Tailwind CSS, PostgreSQL (Neon), and Drizzle ORM.
+```
+PUBLIC LANDING PAGE (/)
+    │  Click "Create Account" or "Get Started"
+    ▼
+SIGN-UP PAGE (/signup)
+    │  Create account (Name, Email, Password) -> Session cookie set
+    ▼
+WORKSPACE ONBOARDING (/onboarding)
+    │  Step 1: Choose Sphere (Personal Workspace or Business Organization)
+    │  Step 2: Configure Workspace Name, Currency (USD/EUR/GBP), Transaction & Monthly Caps
+    │  Step 3 (Business): Set Manager Email & Approval Threshold
+    ▼
+AUTHENTICATED PROCUREMENT DASHBOARD (/app)
+    ├── Product Discovery & Live Refinement (/app/shop)
+    ├── Persistent Procurement Basket (/app/cart)
+    ├── Purchase Proposals (/app/proposals)
+    ├── Pending Manager Approvals (/app/approvals)
+    ├── Authoritative Spending Policies (/app/policies)
+    ├── Operational Hash-Chained Audit Ledger (/app/ledger)
+    ├── Workspace & Team Member Management (/app/workspaces)
+    └── Settings & Notifications (/app/settings)
+```
 
-### Core Security Invariants
-
-1. **Human-in-the-Loop Payment Authorization**: AI assistants research and synthesize options but cannot authorize or execute payments.
-2. **Deterministic Server Policy Engine**: Policies evaluate strictly on the server with integer minor units (`bigint`); binary floating-point representation for money is prohibited.
-3. **Hardware-Bound WebAuthn Authentication**: FIDO2 passkey registration and authentication via SimpleWebAuthn. No shared secrets or passwords stored.
-4. **RFC 8785 Canonical Terms Hashing**: Proposal terms and line items are deterministically serialized and hashed with SHA-256. Any alteration immediately invalidates the authorization challenge.
-5. **Multi-Tenant Isolation**: Strict workspace tenant boundaries enforced in database schemas, foreign keys, and application authorization services.
+**Returning Users:**
+`Public Landing Page (/)` ➔ `Log In (/login)` ➔ If onboarding incomplete: `/onboarding`, otherwise: `/app`.
 
 ---
 
-## Implemented Phases
+## 2. Core Architectural & Security Invariants
 
-- **Phase 1: Foundation & Operational Baselines**: Modular monolith architecture, inward dependency direction, Zod validated config, structured logger, RFC 9457 Problem Details, health/readiness probes, responsive app shell (360px mobile viewport certified).
-- **Phase 2: Tenancy & Passkey Authentication**: Neon PostgreSQL migrations, WebAuthn passkey registration/authentication, secure sessions, multi-tenancy workspaces, role-based access.
-- **Phase 3: Deterministic Policy Engine**: Immutable versioned policies, integer minor units currency conversion, deterministic policy evaluator, `/app/policies` UI.
-- **Phase 4: Purchase Requests & Catalog Research**: Purchase intents, Channel3 & fixture catalog adapters, constrained Gemini research synthesis, `/app/purchases` UI.
-- **Phase 5: Mandates, Canonical Hashing & Sealing**: Unsigned basket review, RFC 8785 JCS canonicalization, SHA-256 terms digest, tamper-evident proposal sealing, passkey authorization flow, `/app/proposals/[proposalId]` UI.
+1. **AI Output Is Untrusted Data**: AI assistants (Gemini, Channel3) recommend products and synthesize specs, but never possess payment keys, execute transactions, or bypass server policies.
+2. **Strict Integer Minor-Unit Arithmetic**: Authoritative financial calculations use `bigint` minor units (e.g., $100.00 = `10000n`). Floating-point arithmetic for money is strictly prohibited.
+3. **Deterministic Server Policy Enforcement**: Spending rules are enforced exclusively on the server against the database-stored active policy; client-supplied policies are ignored.
+4. **Segregation of Duties**: In business workspaces requiring manager approval, requesters cannot approve their own high-value proposals.
+5. **Canonical RFC 8785 Hashing**: Purchase terms and line items are serialized canonically and hashed with SHA-256 (`termsHash`). Any change in merchant, item, or price immediately invalidates prior consent.
+6. **Immutable Hash-Chained Ledger**: Every operational event is recorded with `H_n = SHA-256(H_{n-1} || payload)`, creating a tamper-evident audit trail viewable via AG Grid.
 
 ---
 
-## Quick Start
+## 3. Local Installation & Development
 
 ### Prerequisites
 - Node.js >= 20.x
 - pnpm >= 9.x
-- PostgreSQL database (or Neon serverless connection string)
+- PostgreSQL database (local or Neon/Render Postgres)
 
-### Installation
-```bash
-pnpm install
-```
+### Step-by-Step Setup
+1. **Clone and Install Dependencies**:
+   ```bash
+   git clone https://github.com/<your-repo>/approve_rail.git
+   cd approve_rail
+   pnpm install --frozen-lockfile
+   ```
 
-### Environment Configuration
-Copy `.env.example` to `.env`:
-```bash
-cp .env.example .env
-```
-Configure `DATABASE_URL`, `WEBAUTHN_RP_ID`, and optional AI provider credentials (`GEMINI_API_KEY`, `CHANNEL3_API_KEY`).
+2. **Configure Environment Variables**:
+   ```bash
+   cp .env.example .env.local
+   ```
+   Fill in your `DATABASE_URL` and `SESSION_SECRET` (see checklist below).
 
-### Database Migrations
-```bash
-pnpm db:migrate
-```
+3. **Run Database Migrations**:
+   ```bash
+   pnpm db:migrate
+   ```
 
-### Development Server
-```bash
-pnpm dev
-```
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+4. **Start the Development Server**:
+   ```bash
+   pnpm dev
+   ```
+   Access the app at `http://localhost:3000`.
 
----
-
-## Verification & Testing
-
-ApproveRail includes comprehensive testing suites across all layers:
-
-```bash
-# Type check
-pnpm typecheck
-
-# Linting
-pnpm lint
-
-# Unit, integration, and UI tests
-pnpm test
-
-# End-to-end browser tests (Playwright)
-pnpm test:e2e
-
-# Production build
-pnpm build
-```
+5. **Run Verification Commands**:
+   ```bash
+   pnpm typecheck   # TypeScript check (0 errors)
+   pnpm test:unit   # Unit test suite (101 tests)
+   pnpm test:ui     # UI test suite (33 tests)
+   pnpm build       # Optimized Next.js production build
+   ```
 
 ---
 
-## Deployment on Render
+## 4. Render Deployment Guide
 
-ApproveRail includes native support for **Render** via its Blueprint specification (`render.yaml`) and multi-stage `Dockerfile`.
+ApproveRail is pre-configured with a Render Blueprint (`render.yaml`).
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
-
-- **One-Click Blueprint**: Automatically provisions the Next.js web application and managed PostgreSQL database.
-- **Automated Migrations**: Drizzle ORM migrations run before release via `preDeployCommand`.
-- **Health Probes**: Automated rolling zero-downtime updates via `/api/v1/health`.
-- See the complete [Render Deployment Guide](docs/render-deployment.md).
+### Deploying to Render:
+1. Connect your GitHub repository to [Render](https://dashboard.render.com).
+2. Click **New +** ➔ **Blueprint** and select the ApproveRail repository.
+3. Render automatically provisions:
+   - **PostgreSQL Database** (`approverail-db`) in the `oregon` region.
+   - **Web Service** (`approverail`) running Node.js with Next.js App Router.
+   - Automatic execution of `pnpm db:migrate` prior to startup.
+4. Supply any optional third-party API credentials in the Render Dashboard Environment settings (e.g., `CHANNEL3_API_KEY`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`).
+5. Render deploys the web service with zero manual server configuration.
 
 ---
 
-## Documentation Links
+## 5. Definitive Environment Variables Checklist
 
-- [Render Deployment Guide](docs/render-deployment.md)
+| Variable | Group | Required | Where to Obtain / Notes |
+| :--- | :--- | :--- | :--- |
+| `NODE_ENV` | Core | Yes | Set to `production` on Render, `development` locally. |
+| `PORT` | Core | Yes | Defaults to `3000`. Handled automatically on Render. |
+| `APP_URL` | Core | Yes | Local: `http://localhost:3000`. Render: `https://<service-name>.onrender.com`. |
+| `DATABASE_URL` | Database | Yes | PostgreSQL connection string. Provided by Render Postgres (`approverail-db`). |
+| `SESSION_SECRET` | Security | Yes | 32+ character random secret string. Auto-generated by Render blueprint. |
+| `DEV_AUTH_PIN` | Auth | Optional | Defaults to `123456` for instant local PIN authentication. |
+| `WEBAUTHN_RP_ID` | Auth | Optional | Relying Party ID. Local: `localhost`. Production: your domain (e.g., `onrender.com`). |
+| `WEBAUTHN_ORIGIN` | Auth | Optional | Relying Party Origin. Local: `http://localhost:3000`. Production: your full URL. |
+| `CHANNEL3_API_KEY` | Provider | Optional | Channel3 developer portal (`https://connect.trychannel3.com/developers`). Required for live product catalog. |
+| `CHANNEL3_BASE_URL` | Provider | Optional | Defaults to `https://api.trychannel3.com`. |
+| `GEMINI_API_KEY` | Provider | Optional | Google AI Studio (`https://aistudio.google.com`). Used for research synthesis. |
+| `PAYPAL_CLIENT_ID` | Payment | Optional | PayPal Developer Dashboard (`https://developer.paypal.com`). Sandbox recommended. |
+| `PAYPAL_CLIENT_SECRET` | Payment | Optional | PayPal Developer Dashboard (`https://developer.paypal.com`). |
+| `PAYPAL_MODE` | Payment | Optional | Defaults to `sandbox`. |
+| `PAYPAL_WEBHOOK_ID` | Payment | Optional | PayPal Webhook configuration for capturing asynchronous payment events. |
+| `ZAPIER_WEBHOOK_URL` | Integration | Optional | Zapier webhook endpoint for outbox notification dispatch. |
 
-- [Architecture Guide](docs/ARCHITECTURE.md)
-- [Security Invariants](docs/SECURITY_INVARIANTS.md)
-- [Phase Status Report](docs/PHASE_STATUS.md)
-- [Policy Engine Specification](docs/POLICIES.md)
-- [Purchases & Catalog Research](docs/PURCHASES_AND_CATALOG.md)
-- [Proposals, Mandates & Sealing](docs/PROPOSALS_AND_MANDATES.md)
-- [Local Development Guide](docs/LOCAL_DEVELOPMENT.md)
+---
+
+## 6. Live Channel3 Integration Diagnostics
+
+To verify live Channel3 connectivity from any environment:
+- **CLI Diagnostic Script**:
+  ```bash
+  npx tsx scripts/check-channel3.ts
+  ```
+- **Health Check Endpoint**:
+  ```bash
+  curl http://localhost:3000/api/v1/catalog/health
+  ```
+  Returns status, latency in milliseconds, DNS resolution, and redacted error diagnostics. If local network egress to AWS API Gateway times out, the application clearly indicates this condition and provides a retry mechanism while keeping all core procurement features functional.

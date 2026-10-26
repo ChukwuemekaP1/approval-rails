@@ -36,4 +36,5 @@ export interface DiscoverySearchResult {
   isLiveChannel3: boolean;
   total: number;
   products: DiscoveredProduct[];
+  error?: string | null;
 }

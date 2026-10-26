@@ -146,6 +146,16 @@ export class WorkspaceRepository {
     return (rows[0] as WorkspaceMember) || null;
   }
 
+  async update(id: string, data: { name?: string; type?: WorkspaceType }): Promise<Workspace | null> {
+    const db = getDb();
+    const rows = await db
+      .update(workspaces)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(workspaces.id, id))
+      .returning();
+    return (rows[0] as Workspace) || null;
+  }
+
   async removeMember(workspaceId: string, principalId: string): Promise<boolean> {
     const db = getDb();
     await db

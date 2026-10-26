@@ -1,11 +1,17 @@
 import { getEnv } from '@/infrastructure/config/env';
-import {
-  DiscoveredProduct,
-  DiscoverySearchResult,
-  DiscoveredOffer,
-} from '@/domain/catalog/discovery-types';
-import { CurrencyCode, parseDecimalToMinorUnits, formatMinorUnitsToDecimal } from '@/domain/money/currency';
+import { DiscoveredProduct, DiscoverySearchResult } from '@/domain/catalog/discovery-types';
 import { DEMO_DISCOVERY_PRODUCTS } from './discovery-fixtures';
+import { mapChannel3ItemToProduct } from './channel3-mapper';
+
+export interface DiscoverySearchParams {
+  query?: string;
+  category?: string | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  brand?: string | null;
+  condition?: string | null;
+  limit?: number;
+}
 
 export class Channel3DiscoveryService {
   isConfigured(): boolean {
@@ -13,57 +19,46 @@ export class Channel3DiscoveryService {
     return Boolean(env.CHANNEL3_API_KEY && env.CHANNEL3_API_KEY.trim().length > 0);
   }
 
-  async search(params: {
-    query?: string;
-    category?: string | null;
-    limit?: number;
-  }): Promise<DiscoverySearchResult> {
-    const queryStr = (params.query || params.category || 'office equipment').trim();
+  async search(params: DiscoverySearchParams): Promise<DiscoverySearchResult> {
+    const queryStr = (params.query || params.category || '').trim();
 
-    if (this.isConfigured()) {
-      try {
-        const liveProducts = await this.searchChannel3Api(queryStr, params.limit || 8);
-        if (liveProducts.length > 0) {
-          return {
-            query: queryStr,
-            category: params.category || null,
-            providerId: 'channel3',
-            isLiveChannel3: true,
-            total: liveProducts.length,
-            products: liveProducts,
-          };
-        }
-      } catch (err) {
-        console.warn('Channel3 live search failed, falling back to verified demo catalog:', err);
-      }
+    if (process.env.NODE_ENV === 'test' && !this.isConfigured()) {
+      return this.searchTestFixtures(queryStr, params.category);
     }
 
-    const q = queryStr.toLowerCase();
-    const cat = params.category?.toLowerCase();
-
-    let filtered = DEMO_DISCOVERY_PRODUCTS;
-    if (cat) {
-      filtered = filtered.filter((p) => p.category?.toLowerCase() === cat);
-    }
-    if (params.query && params.query.trim()) {
-      filtered = filtered.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.brand?.toLowerCase().includes(q) ||
-          p.description?.toLowerCase().includes(q)
-      );
+    if (!this.isConfigured()) {
+      return {
+        query: queryStr,
+        category: params.category || null,
+        providerId: 'channel3',
+        isLiveChannel3: false,
+        total: 0,
+        products: [],
+        error: 'Channel3 API credentials are not configured.',
+      };
     }
 
-    const results = filtered.length > 0 ? filtered : DEMO_DISCOVERY_PRODUCTS.slice(0, 4);
-
-    return {
-      query: queryStr,
-      category: params.category || null,
-      providerId: 'fixture',
-      isLiveChannel3: false,
-      total: results.length,
-      products: results,
-    };
+    try {
+      const liveProducts = await this.searchChannel3Api(params);
+      return {
+        query: queryStr,
+        category: params.category || null,
+        providerId: 'channel3',
+        isLiveChannel3: true,
+        total: liveProducts.length,
+        products: liveProducts,
+      };
+    } catch (err: any) {
+      return {
+        query: queryStr,
+        category: params.category || null,
+        providerId: 'channel3',
+        isLiveChannel3: false,
+        total: 0,
+        products: [],
+        error: `Channel3 search unavailable: ${err?.message || 'Connection timeout'}`,
+      };
+    }
   }
 
   async getProduct(id: string): Promise<DiscoveredProduct | null> {
@@ -71,63 +66,71 @@ export class Channel3DiscoveryService {
     return match || null;
   }
 
-  private async searchChannel3Api(query: string, limit: number): Promise<DiscoveredProduct[]> {
+  private searchTestFixtures(query: string, category?: string | null): DiscoverySearchResult {
+    const q = (query || '').toLowerCase();
+    const cat = category?.toLowerCase();
+    let filtered = DEMO_DISCOVERY_PRODUCTS;
+    if (cat) filtered = filtered.filter((p) => p.category?.toLowerCase() === cat);
+    if (q && q !== cat) {
+      filtered = filtered.filter(
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          p.brand?.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q)
+      );
+    }
+    const results = cat ? filtered : (filtered.length > 0 ? filtered : DEMO_DISCOVERY_PRODUCTS.slice(0, 4));
+    return {
+      query,
+      category: category || null,
+      providerId: 'fixture',
+      isLiveChannel3: false,
+      total: results.length,
+      products: results,
+    };
+  }
+
+  private async searchChannel3Api(params: DiscoverySearchParams): Promise<DiscoveredProduct[]> {
     const env = getEnv();
-    const res = await fetch(`${env.CHANNEL3_BASE_URL}/v1/search`, {
-      method: 'POST',
-      headers: {
-        'x-api-key': env.CHANNEL3_API_KEY!,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query, limit }),
-      cache: 'no-store',
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
 
-    if (!res.ok) throw new Error(`Channel3 API error: ${res.status}`);
-    const data = await res.json();
-    const items = data.products || data.items || [];
+    const queryParts = [params.query, params.brand].filter(Boolean).join(' ').trim();
+    const filters: Record<string, unknown> = {};
+    if (params.minPrice || params.maxPrice) {
+      filters.price = {
+        ...(params.minPrice ? { min_price: params.minPrice } : {}),
+        ...(params.maxPrice ? { max_price: params.maxPrice } : {}),
+      };
+    }
+    if (params.category) filters.category = params.category;
+    if (params.condition && params.condition !== 'ANY') filters.condition = params.condition;
+    filters.availability = ['InStock'];
 
-    return items.map((item: any, idx: number) => {
-      const rawOffers = item.offers && item.offers.length > 0 ? item.offers : [];
-      const offers: DiscoveredOffer[] = rawOffers.map((o: any, oIdx: number) => {
-        const rawPrice = o.price?.price ?? o.price ?? 0;
-        const curr = ((o.price?.currency || item.currency || 'USD').toUpperCase()) as CurrencyCode;
-        let minor = 0n;
-        try {
-          minor = parseDecimalToMinorUnits(String(rawPrice), curr);
-        } catch {
-          minor = 0n;
-        }
-        return {
-          id: `c3-off-${item.id}-${oIdx}`,
-          merchant: o.domain || o.merchant || 'Verified Merchant',
-          priceMinor: minor,
-          currency: curr,
-          formattedPrice: `$${formatMinorUnitsToDecimal(minor, curr)}`,
-          availability: o.availability?.toLowerCase() === 'instock' ? 'IN_STOCK' : 'UNKNOWN',
-          condition: o.condition || 'New',
-          buyUrl: o.url || item.url || 'https://trychannel3.com',
-          observedAt: new Date(),
-        };
+    try {
+      const res = await fetch(`${env.CHANNEL3_BASE_URL}/v1/search`, {
+        method: 'POST',
+        headers: {
+          'x-api-key': env.CHANNEL3_API_KEY!,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          query: queryParts || 'products',
+          filters: Object.keys(filters).length > 0 ? filters : undefined,
+          limit: params.limit || 12,
+        }),
+        signal: controller.signal,
+        cache: 'no-store',
       });
 
-      const firstPrice = offers[0]?.priceMinor ?? 0n;
-
-      return {
-        id: item.id || `c3-prod-${idx}`,
-        title: item.title,
-        brand: item.brand || null,
-        category: item.category || 'General',
-        description: item.description || null,
-        primaryImage: item.image_url || item.primary_image || item.image || null,
-        additionalImages: item.images || [],
-        minPriceMinor: firstPrice,
-        maxPriceMinor: firstPrice,
-        currency: (item.currency?.toUpperCase() || 'USD') as CurrencyCode,
-        offers,
-        providerId: 'channel3' as const,
-      };
-    });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const data = await res.json();
+      const items = data.products || data.items || [];
+      return items.map((item: any, idx: number) => mapChannel3ItemToProduct(item, idx));
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 }
 
