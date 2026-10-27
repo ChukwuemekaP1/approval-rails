@@ -34,7 +34,7 @@ services:
       - key: CHANNEL3_API_KEY
         sync: false
       - key: CHANNEL3_BASE_URL
-        value: https://api.trychannel3.com
+        value: https://api.channel3.ai
       - key: GEMINI_API_KEY
         sync: false
       - key: PAYPAL_CLIENT_ID
