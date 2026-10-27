@@ -10,6 +10,7 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml* .npmrc* ./
+RUN pnpm config set dangerously-allow-all-builds true
 RUN pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
