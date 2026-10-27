@@ -47,6 +47,6 @@ COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 
 USER nextjs
 
-EXPOSE 10000
+EXPOSE 10000 3000
 
-CMD ["node_modules/.bin/next", "start", "-H", "0.0.0.0"]
+CMD ["sh", "-c", "node_modules/.bin/next start -p ${PORT:-3000} -H 0.0.0.0"]
