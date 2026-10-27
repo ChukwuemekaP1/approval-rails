@@ -91,6 +91,8 @@ AUTHENTICATED PROCUREMENT DASHBOARD (/app)
 
 ## 4. Render Deployment Guide
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
 ApproveRail is pre-configured with a Render Blueprint (`render.yaml`).
 
 ### Deploying to Render:
