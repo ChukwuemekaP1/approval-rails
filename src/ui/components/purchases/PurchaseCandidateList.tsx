@@ -6,7 +6,7 @@ import { PurchaseCandidateCard } from './PurchaseCandidateCard';
 
 interface Props {
   candidates: PurchaseRequestDTO['candidates'];
-  recommendedCandidateId?: string;
+  recommendedCandidateId?: string | null;
   comparisons?: PurchaseRequestDTO['summary'] extends { comparisons: (infer C)[] } ? C[] : any[];
   onCreateProposal: (id: string) => void;
   creatingCandidateId: string | null;

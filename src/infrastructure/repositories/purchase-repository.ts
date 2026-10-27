@@ -5,6 +5,7 @@ import { PurchaseRequest, PurchaseRequestStatus } from '@/domain/purchase/types'
 import { CatalogCandidateSnapshot } from '@/domain/catalog/types';
 import { ResearchSummary } from '@/domain/catalog/comparison';
 import { CurrencyCode } from '@/domain/money/currency';
+import { mapRequestRow, mapCandidateRow } from './purchase-mapper';
 
 export interface CreatePurchaseRequestInput {
   workspaceId: string;
@@ -35,7 +36,7 @@ export class PurchaseRepository {
       })
       .returning();
 
-    return this.mapRequestRow(row);
+    return mapRequestRow(row);
   }
 
   async getById(requestId: string, workspaceId: string): Promise<PurchaseRequest | null> {
@@ -45,7 +46,7 @@ export class PurchaseRepository {
       .from(purchaseRequests)
       .where(and(eq(purchaseRequests.id, requestId), eq(purchaseRequests.workspaceId, workspaceId)));
 
-    return row ? this.mapRequestRow(row) : null;
+    return row ? mapRequestRow(row) : null;
   }
 
   async listForWorkspace(workspaceId: string): Promise<PurchaseRequest[]> {
@@ -56,7 +57,7 @@ export class PurchaseRepository {
       .where(eq(purchaseRequests.workspaceId, workspaceId))
       .orderBy(desc(purchaseRequests.createdAt));
 
-    return rows.map((r: typeof purchaseRequests.$inferSelect) => this.mapRequestRow(r));
+    return rows.map(mapRequestRow);
   }
 
   async updateStatus(
@@ -68,11 +69,7 @@ export class PurchaseRepository {
     const db = getDb();
     await db
       .update(purchaseRequests)
-      .set({
-        status,
-        failureReason: failureReason || null,
-        updatedAt: new Date(),
-      })
+      .set({ status, failureReason: failureReason || null, updatedAt: new Date() })
       .where(and(eq(purchaseRequests.id, requestId), eq(purchaseRequests.workspaceId, workspaceId)));
   }
 
@@ -84,10 +81,8 @@ export class PurchaseRepository {
   ): Promise<void> {
     const db = getDb();
     await db.transaction(async (tx: any) => {
-      // 1. Delete existing candidates for this request (in case of retry)
       await tx.delete(catalogCandidates).where(eq(catalogCandidates.purchaseRequestId, requestId));
 
-      // 2. Insert new candidates
       if (candidates.length > 0) {
         await tx.insert(catalogCandidates).values(
           candidates.map((c) => ({
@@ -107,7 +102,6 @@ export class PurchaseRepository {
         );
       }
 
-      // 3. Update request with summary and COMPLETED status
       await tx
         .update(purchaseRequests)
         .set({
@@ -127,21 +121,7 @@ export class PurchaseRepository {
       .from(catalogCandidates)
       .where(eq(catalogCandidates.purchaseRequestId, requestId));
 
-    return rows.map((r: typeof catalogCandidates.$inferSelect) => ({
-      id: r.id,
-      purchaseRequestId: r.purchaseRequestId,
-      providerId: r.providerId as 'channel3' | 'fixture',
-      externalId: r.externalId,
-      merchant: r.merchant,
-      title: r.title,
-      description: r.description,
-      sourceUrl: r.sourceUrl,
-      priceMinor: r.priceMinor ? BigInt(r.priceMinor) : null,
-      currency: (r.currency as CurrencyCode) || null,
-      availabilityStatus: r.availabilityStatus as any,
-      rawMetadata: r.rawMetadata ? JSON.parse(r.rawMetadata) : null,
-      observedAt: r.observedAt,
-    }));
+    return rows.map(mapCandidateRow);
   }
 
   async getSummary(requestId: string, workspaceId: string): Promise<ResearchSummary | null> {
@@ -157,26 +137,6 @@ export class PurchaseRepository {
     } catch {
       return null;
     }
-  }
-
-  private mapRequestRow(row: typeof purchaseRequests.$inferSelect): PurchaseRequest {
-    return {
-      id: row.id,
-      workspaceId: row.workspaceId,
-      createdBy: row.createdBy,
-      correlationId: row.correlationId,
-      intent: row.intent,
-      constraints: {
-        budgetMinor: row.budgetMinor ? BigInt(row.budgetMinor) : null,
-        currency: row.currency as CurrencyCode,
-        category: row.category,
-        preferredMerchant: row.preferredMerchant,
-      },
-      status: row.status as PurchaseRequestStatus,
-      failureReason: row.failureReason,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-    };
   }
 }
 

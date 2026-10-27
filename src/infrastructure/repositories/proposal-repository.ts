@@ -4,6 +4,7 @@ import { proposals, proposalLineItems } from '../db/schema';
 import { Proposal, ProposalLineItem, ProposalStatus } from '@/domain/proposal/types';
 import { CurrencyCode } from '@/domain/money/currency';
 import { PolicyEvaluationResult } from '@/domain/policy/types';
+import { mapRowToProposal, mapLineItemRow } from './proposal-mapper';
 
 export interface CreateProposalInput {
   workspaceId: string;
@@ -61,7 +62,7 @@ export class ProposalRepository {
         );
       }
 
-      return this.mapRowToProposal(row, items);
+      return mapRowToProposal(row, items);
     });
   }
 
@@ -79,19 +80,7 @@ export class ProposalRepository {
       .from(proposalLineItems)
       .where(eq(proposalLineItems.proposalId, proposalId));
 
-    const items: ProposalLineItem[] = itemRows.map((r: typeof proposalLineItems.$inferSelect) => ({
-      id: r.id,
-      candidateId: r.candidateId,
-      title: r.title,
-      merchant: r.merchant,
-      sourceUrl: r.sourceUrl,
-      quantity: r.quantity,
-      unitPriceMinor: BigInt(r.unitPriceMinor),
-      totalPriceMinor: BigInt(r.totalPriceMinor),
-      currency: r.currency as CurrencyCode,
-    }));
-
-    return this.mapRowToProposal(row, items);
+    return mapRowToProposal(row, itemRows.map(mapLineItemRow));
   }
 
   async listForWorkspace(workspaceId: string): Promise<Proposal[]> {
@@ -109,19 +98,7 @@ export class ProposalRepository {
           .from(proposalLineItems)
           .where(eq(proposalLineItems.proposalId, row.id));
 
-        const items: ProposalLineItem[] = itemRows.map((r: typeof proposalLineItems.$inferSelect) => ({
-          id: r.id,
-          candidateId: r.candidateId,
-          title: r.title,
-          merchant: r.merchant,
-          sourceUrl: r.sourceUrl,
-          quantity: r.quantity,
-          unitPriceMinor: BigInt(r.unitPriceMinor),
-          totalPriceMinor: BigInt(r.totalPriceMinor),
-          currency: r.currency as CurrencyCode,
-        }));
-
-        return this.mapRowToProposal(row, items);
+        return mapRowToProposal(row, itemRows.map(mapLineItemRow));
       })
     );
   }
@@ -135,11 +112,7 @@ export class ProposalRepository {
     const db = getDb();
     await db
       .update(proposals)
-      .set({
-        status,
-        ...extraFields,
-        updatedAt: new Date(),
-      })
+      .set({ status, ...extraFields, updatedAt: new Date() })
       .where(and(eq(proposals.id, proposalId), eq(proposals.workspaceId, workspaceId)));
   }
 
@@ -155,7 +128,6 @@ export class ProposalRepository {
   ): Promise<void> {
     const db = getDb();
     await db.transaction(async (tx: any) => {
-      // 1. Replace line items
       await tx.delete(proposalLineItems).where(eq(proposalLineItems.proposalId, proposalId));
 
       if (items.length > 0) {
@@ -175,7 +147,6 @@ export class ProposalRepository {
         );
       }
 
-      // 2. Invalidate any pending auth challenge and update terms & status
       await tx
         .update(proposals)
         .set({
@@ -184,7 +155,7 @@ export class ProposalRepository {
           termsHash,
           policyEvaluation: JSON.stringify(policyEvaluation),
           status,
-          authChallenge: null, // Any prior challenge is invalidated
+          authChallenge: null,
           updatedAt: new Date(),
         })
         .where(and(eq(proposals.id, proposalId), eq(proposals.workspaceId, workspaceId)));
@@ -208,35 +179,6 @@ export class ProposalRepository {
         updatedAt: new Date(),
       })
       .where(and(eq(proposals.id, proposalId), eq(proposals.workspaceId, workspaceId)));
-  }
-
-  private mapRowToProposal(
-    row: typeof proposals.$inferSelect,
-    items: ProposalLineItem[]
-  ): Proposal {
-    return {
-      id: row.id,
-      workspaceId: row.workspaceId,
-      requesterId: row.requesterId,
-      sourceRequestId: row.sourceRequestId,
-      merchant: row.merchant,
-      currency: row.currency as CurrencyCode,
-      items,
-      totalAmountMinor: BigInt(row.totalAmountMinor),
-      status: row.status as ProposalStatus,
-      policyVersion: row.policyVersion,
-      policyHash: row.policyHash,
-      policyEvaluation: JSON.parse(row.policyEvaluation),
-      canonicalTermsJson: row.canonicalTermsJson,
-      termsHash: row.termsHash,
-      expiresAt: row.expiresAt,
-      authorizedAt: row.authorizedAt,
-      authorizedBy: row.authorizedBy,
-      authorizationAssertion: row.authorizationAssertion ? JSON.parse(row.authorizationAssertion) : null,
-      authChallenge: row.authChallenge,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-    };
   }
 }
 
