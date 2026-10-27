@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { DollarSign, Shield, Calendar, Lock, ArrowRight, Copy, Check } from 'lucide-react';
-import { SUPPORTED_CURRENCIES } from '@/domain/money/currency';
+import { ArrowRight, Copy, Check } from 'lucide-react';
 import { FormattedPolicyDTO } from './types';
+import { PolicyMetricCards } from './PolicyMetricCards';
 
 interface Props {
   activePolicy: FormattedPolicyDTO;
@@ -20,47 +20,9 @@ export function PolicyOverviewTab({
   copiedHash,
   onCopyHash,
 }: Props) {
-  const symbol = SUPPORTED_CURRENCIES[activePolicy.currency]?.symbol || '$';
-
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Currency</span>
-            <DollarSign className="w-4 h-4 text-brand-teal" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{activePolicy.currency}</div>
-          <span className="text-xs text-slate-500">{SUPPORTED_CURRENCIES[activePolicy.currency]?.decimals} minor decimals</span>
-        </div>
-
-        <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Max Per Transaction</span>
-            <Shield className="w-4 h-4 text-brand-teal" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{symbol}{activePolicy.maxTransactionAmount}</div>
-          <span className="text-xs text-slate-500">{activePolicy.maxTransactionAmountMinor} minor units</span>
-        </div>
-
-        <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Monthly Spend Cap</span>
-            <Calendar className="w-4 h-4 text-brand-teal" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{symbol}{activePolicy.monthlyBudgetCap}</div>
-          <span className="text-xs text-slate-500">Cumulative budget per calendar month</span>
-        </div>
-
-        <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Admin Threshold</span>
-            <Lock className="w-4 h-4 text-brand-teal" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{activePolicy.requireAdminAbove ? `${symbol}${activePolicy.requireAdminAbove}` : 'None'}</div>
-          <span className="text-xs text-slate-500">{activePolicy.requireAdminAbove ? 'Requires workspace Admin' : 'Any member can execute'}</span>
-        </div>
-      </div>
+      <PolicyMetricCards policy={activePolicy} />
 
       <div className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
