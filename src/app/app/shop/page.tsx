@@ -40,10 +40,16 @@ export default function ShopPage() {
       params.set('limit', '12');
 
       const res = await fetch(`/api/v1/catalog/search?${params.toString()}`);
-      const data = await res.json();
-      setProducts(data.products || []);
+      const data = await res.json().catch(() => ({}));
+      const safeProducts = (Array.isArray(data.products) ? data.products : []).map((p: any) => ({
+        ...p,
+        title: String(p?.title ?? ''),
+        offers: Array.isArray(p?.offers) ? p.offers : [],
+      }));
+      setProducts(safeProducts);
       setIsLiveChannel3(Boolean(data.isLiveChannel3));
-      if (data.error) setError(data.error);
+      const problem = data.error ?? (!res.ok ? data.detail ?? data.title ?? `Search failed (${res.status})` : null);
+      if (problem) setError(typeof problem === 'string' ? problem : JSON.stringify(problem));
     } catch (err: any) {
       setError(err?.message || 'Search request failed');
     } finally {
