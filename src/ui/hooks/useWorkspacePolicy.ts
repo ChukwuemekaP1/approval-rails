@@ -14,7 +14,7 @@ export function useWorkspacePolicy(workspaceId?: string, isAuthenticated?: boole
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
 
-  const form = usePolicyFormState();
+  const { populateFromPolicy, ...form } = usePolicyFormState();
 
   const fetchPolicyData = useCallback(async () => {
     if (!workspaceId) return;
@@ -26,7 +26,7 @@ export function useWorkspacePolicy(workspaceId?: string, isAuthenticated?: boole
         const pData = await pRes.json();
         const pol = pData.policy as FormattedPolicyDTO;
         setActivePolicy(pol);
-        form.populateFromPolicy(pol);
+        populateFromPolicy(pol);
       } else {
         const err = await pRes.json();
         setErrorMsg(err.detail || 'Failed to load policy');
@@ -42,7 +42,7 @@ export function useWorkspacePolicy(workspaceId?: string, isAuthenticated?: boole
     } finally {
       setIsLoading(false);
     }
-  }, [workspaceId]);
+  }, [workspaceId, populateFromPolicy]);
 
   useEffect(() => {
     if (isAuthenticated && workspaceId) {
@@ -76,7 +76,7 @@ export function useWorkspacePolicy(workspaceId?: string, isAuthenticated?: boole
   };
 
   const handleResetForm = () => {
-    if (activePolicy) form.populateFromPolicy(activePolicy);
+    if (activePolicy) populateFromPolicy(activePolicy);
     setErrorMsg(null);
   };
 

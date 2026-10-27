@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { CurrencyCode } from '@/domain/money/currency';
 import { FormattedPolicyDTO } from '@/ui/components/policies/types';
 
@@ -13,7 +13,7 @@ export function usePolicyFormState() {
   const [formAllowedCategories, setFormAllowedCategories] = useState('');
   const [formBlockedMerchants, setFormBlockedMerchants] = useState('');
 
-  const populateFromPolicy = (pol: FormattedPolicyDTO) => {
+  const populateFromPolicy = useCallback((pol: FormattedPolicyDTO) => {
     setFormName(pol.name);
     setFormCurrency(pol.currency);
     setFormMaxTx(pol.maxTransactionAmount);
@@ -21,7 +21,7 @@ export function usePolicyFormState() {
     setFormRequireAdminAbove(pol.requireAdminAbove || '');
     setFormAllowedCategories(pol.allowedCategories ? pol.allowedCategories.join(', ') : '');
     setFormBlockedMerchants(pol.blockedMerchants ? pol.blockedMerchants.join(', ') : '');
-  };
+  }, []);
 
   return {
     formName, setFormName,
